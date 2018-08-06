@@ -1,0 +1,29 @@
+{
+	"name": "bdk/toolbox",
+	"description": "Common HTML, array, & string tools",
+	"keywords": [],
+	"homepage": "http://github.com/bkdotcom/Toolbox",
+	"license": "MIT",
+	"authors": [
+		{
+			"name": "Brad Kent",
+			"email": "bkfake-packagist@yahoo.com",
+			"homepage": "http://www.bradkent.com/",
+			"role": "Developer"
+		}
+	],
+	"autoload": {
+		"psr-4": { "bdk\\": "src/" }
+	},
+	"require": {
+		"php": ">=5.3.0",
+		"bdk/debug": "dev-master"
+	},
+	"_suggest": {
+		"bdk/css-xpath": "dev-master",
+		"bdk/form": "dev-master",
+		"bdk/simplecache": "dev-master",
+		"bdk/wamp-publisher": "dev-master",
+		"bdk/debug-wamp-client": "^1.0"
+	}
+}
