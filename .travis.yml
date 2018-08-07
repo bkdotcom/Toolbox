@@ -15,9 +15,10 @@ matrix:
 install:
   - composer install
 before_script:
-  - echo "TRAVIS_PHP_VERSION:" $TRAVIS_PHP_VERSION;
+  - |
+    echo "TRAVIS_PHP_VERSION:" $TRAVIS_PHP_VERSION;
     if [ ${TRAVIS_PHP_VERSION:0:4} == "hhvm" ]; then
-      echo "hhvm.php7.all = 1" >> /tmp/hhvm.php.ini
+      echo "hhvm.php7.all = 1" >> /tmp/hhvm.php.ini;
       curl -sSfL -o ~/.phpenv/versions/hhvm/bin/phpunit https://phar.phpunit.de/phpunit-7.0.phar;
     else
       curl -sSfL -o ~/.phpenv/versions/hhvm/bin/phpunit https://phar.phpunit.de/phpunit-5.7.phar;
