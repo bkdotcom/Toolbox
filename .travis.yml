@@ -15,10 +15,9 @@ matrix:
 install:
   - composer install
 before_script:
-  - |
+  - echo $TRAVIS_PHP_VERSION;
     if [ "$TRAVIS_PHP_VERSION" == "hhvm" ]; then
-      # phpunit-5.7 doesn't work with HHVM
-      curl -sSfL -o ~/.phpenv/versions/hhvm/bin/phpunit https://phar.phpunit.de/phpunit-6.0.phar;
+      curl -sSfL -o ~/.phpenv/versions/hhvm/bin/phpunit https://phar.phpunit.de/phpunit-7.0.phar;
     else
       curl -sSfL -o ~/.phpenv/versions/hhvm/bin/phpunit https://phar.phpunit.de/phpunit-5.7.phar;
     fi
