@@ -22,15 +22,18 @@ if (!function_exists('apache_request_headers')) {
      */
     function apache_request_headers()
     {
-        $headers = array();
-        foreach ($_SERVER as $k => $v) {
-            if (strpos($k, 'HTTP_') === 0) {
-                $k = strtr(substr($k, 5), '_', ' ');
-                $k = ucwords(strtolower($k));
-                $k = strtr($k, ' ', '-');
-                $headers[$k] = $v;
-            }
-        }
-        return $headers;
+        return \bdk\Debug\Utilities::getAllHeaders();
+    }
+}
+
+if (!function_exists('getallheaders')) {
+    /**
+     * Shim for the getallheaders function (alias of apache_request_headers)
+     *
+     * @return array
+     */
+    function getallheaders()
+    {
+        return \bdk\Debug\Utilities::getAllHeaders();
     }
 }
