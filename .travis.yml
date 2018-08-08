@@ -18,7 +18,6 @@ matrix:
 install:
   - |
     php -v
-    phpunit --version
     composer install
 before_script:
   - |
@@ -30,3 +29,4 @@ before_script:
     else
       curl -sSfL -o ~/.phpenv/versions/hhvm/bin/phpunit https://phar.phpunit.de/phpunit-5.7.phar;
     fi
+    ~/.phpenv/versions/hhvm/bin/phpunit --version
