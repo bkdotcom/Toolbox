@@ -3,8 +3,6 @@
 namespace bdk;
 
 use ArrayIterator;
-use ReflectionObject;
-use ReflectionMethod;
 
 /**
  * Session wrapper
@@ -15,8 +13,6 @@ use ReflectionMethod;
  */
 class Session implements \ArrayAccess, \Countable, \IteratorAggregate
 {
-
-    // protected $cfg = array();
 
     protected static $cfgStatic = array(
         'cookieLifetime'=> 0,                   // TTL (seconds) 0 = expire when close browser
@@ -47,14 +43,12 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
     protected static $cfgExplicitlySet = array();
 
     protected static $status = array(
-        // 'isStarted' => false,
         'requestId' => null,
         'regenerated' => false,
         'cfgInitialized' => false,
     );
 
     private static $instance;
-    // private static $publicMethods = array();
 
     /**
      * Constructor
@@ -63,15 +57,14 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
      */
     public function __construct(array $cfg = array())
     {
-        // $this->debug = \bdk\Debug::getInstance();
         if (!isset(self::$instance)) {
             // self::getInstance() will always return initial/first instance
             self::$instance = $this;
         }
         self::setCfg($cfg);
         // $this->setPublicMethods();
-        if (ini_get('session.save_handler') == 'files') {
-            \bdk\Debug::_info('savePath', self::$cfgStatic['savePath']);
+        if (\ini_get('session.save_handler') == 'files') {
+            \bdk\Debug::_info('session savePath', self::$cfgStatic['savePath']);
         }
     }
 
@@ -89,10 +82,10 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
     /*
     public static function __callStatic($methodName, $args)
     {
-        $methodName = ltrim($methodName, '_');
-        if (in_array($methodName, self::$publicMethods)) {
+        $methodName = \ltrim($methodName, '_');
+        if (\in_array($methodName, self::$publicMethods)) {
             $instance = self::getInstance();
-            return call_user_func_array(array($instance, $methodName), $args);
+            return \call_user_func_array(array($instance, $methodName), $args);
         }
     }
     */
@@ -108,17 +101,17 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
     /*
     public function cfg(array $cfg = array())
     {
-        $this->cfgExplicitlySet = array_merge($this->cfgExplicitlySet, $cfg);
-        if (empty($this->cfgDefault['savePath']) && ini_get('session.save_handler') == 'files') {
-            $this->cfgDefault['savePath'] = sys_get_temp_dir();
+        $this->cfgExplicitlySet = \array_merge($this->cfgExplicitlySet, $cfg);
+        if (empty($this->cfgDefault['savePath']) && \ini_get('session.save_handler') == 'files') {
+            $this->cfgDefault['savePath'] = \sys_get_temp_dir();
         }
-        $this->cfg = array_merge(
+        $this->cfg = \array_merge(
             $this->cfgDefault,
             array(
                 'name' => $this->cfgDefaultName(),
             ),
             // session_get_cookie_params(),
-            array_intersect_key($this->cfg, $this->cfgExplicitlySet),   // toss any values that may have come via default
+            \array_intersect_key($this->cfg, $this->cfgExplicitlySet),   // toss any values that may have come via default
             $cfg
         );
         $this->debug->info('session cookie lifetime', $this->cfg['cookieLifetime']);
@@ -136,7 +129,7 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
     public static function clear()
     {
         self::start();
-        foreach (array_keys($_SESSION) as $key) {
+        foreach (\array_keys($_SESSION) as $key) {
             unset($_SESSION[$key]);
         }
     }
@@ -149,14 +142,14 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
      */
     public static function destroy()
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
+        if (\session_status() !== PHP_SESSION_ACTIVE) {
             return false;
         }
-        foreach (array_keys($_SESSION) as $key) {
+        foreach (\array_keys($_SESSION) as $key) {
             unset($_SESSION[$key]);
         }
         self::$cfgStatic['id'] = null;
-        $success = session_destroy();
+        $success = \session_destroy();
         if (!$success) {
             return false;
         }
@@ -165,10 +158,10 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
             If strict mode is enabled... this isn't exactly necessary...  a new id will be used..
             however, we may not want to start a new session
         */
-        setcookie(
+        \setcookie(
             self::$cfgStatic['name'],
             '',
-            time()-60*60*24,
+            \time()-60*60*24,
             self::$cfgStatic['cookiePath'],
             self::$cfgStatic['cookieDomain'],
             self::$cfgStatic['cookieSecure'],
@@ -184,16 +177,16 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
      */
     public static function gc()
     {
-        if (version_compare(PHP_VERSION, '7.0.0', '>=')) {
-            return session_gc();
+        if (\version_compare(PHP_VERSION, '7.0.0', '>=')) {
+            return \session_gc();
         }
         /*
             Polyfill for PHP < 7
         */
         $initial = array(
-            'status' => session_status(),
-            'probability' => ini_get('session.gc_probability'),
-            'divisor' => ini_get('session.gc_divisor'),
+            'status' => \session_status(),
+            'probability' => \ini_get('session.gc_probability'),
+            'divisor' => \ini_get('session.gc_divisor'),
         );
         if ($initial['status'] === PHP_SESSION_DISABLED) {
             return false;
@@ -201,18 +194,18 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
         if ($initial['status'] === PHP_SESSION_ACTIVE) {
             // garbage collection is performed on session_start..
             // close our open session... and restart it
-            session_write_close();
+            \session_write_close();
         }
-        ini_set('session.gc_probability', 1);
-        ini_set('session.gc_divisor', 1);
-        session_start();
-        ini_set('session.gc_probability', $initial['probability']);
-        ini_set('session.gc_divisor', $initial['divisor']);
+        \ini_set('session.gc_probability', 1);
+        \ini_set('session.gc_divisor', 1);
+        \session_start();
+        \ini_set('session.gc_probability', $initial['probability']);
+        \ini_set('session.gc_divisor', $initial['divisor']);
         if ($initial['status'] === PHP_SESSION_NONE) {
             if (self::$status['requestId']) {
-                session_write_close();
+                \session_write_close();
             } else {
-                session_destroy();
+                \session_destroy();
             }
         }
         return true;
@@ -231,7 +224,7 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
      */
     public static function &get($key)
     {
-        self::start();
+        self::startIf();
         if (isset($_SESSION[$key])) {
             return $_SESSION[$key];
         } else {
@@ -268,8 +261,8 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
      */
     public static function has($key)
     {
-        self::start();
-        return array_key_exists($key, $_SESSION);
+        self::startIf();
+        return \array_key_exists($key, $_SESSION);
     }
 
     /**
@@ -290,17 +283,17 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
             // no session id was passed... there's no need to regenerate!
             return false;
         }
-        if (session_status() === PHP_SESSION_NONE) {
+        if (\session_status() === PHP_SESSION_NONE) {
             // there's currently not a session
             self::$cfgStatic['regenOnStart'] = true;
         }
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            $success = session_regenerate_id($delOldSession);
+        if (\session_status() === PHP_SESSION_ACTIVE) {
+            $success = \session_regenerate_id($delOldSession);
             self::$cfgStatic['regenOnStart'] = false;
             self::$status['regenerated'] = true;
         }
         if ($success) {
-            \bdk\Debug::_info('new session_id', session_id());
+            \bdk\Debug::_info('new session_id', \session_id());
         }
         return $success;
     }
@@ -334,14 +327,14 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
 
     public static function setCfg($key, $value = null)
     {
-        if (is_string($key)) {
+        if (\is_string($key)) {
             $cfg = array();
             ArrayUtil::path($cfg, $key, $value);
-        } elseif (is_array($key)) {
+        } elseif (\is_array($key)) {
             $cfg = $key;
         }
-        self::$cfgExplicitlySet = array_merge(self::$cfgExplicitlySet, $cfg);
-        self::$cfgStatic = array_merge(self::$cfgStatic, self::cfgGetDefaults(), $cfg);
+        self::$cfgExplicitlySet = \array_merge(self::$cfgExplicitlySet, $cfg);
+        self::$cfgStatic = \array_merge(self::$cfgStatic, self::cfgGetDefaults(), $cfg);
         self::cfgApply();
     }
 
@@ -355,15 +348,15 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
         /*
             session_id() will continue to return id even after session_write_close()
         */
-        if (session_status() === PHP_SESSION_ACTIVE) {
+        if (\session_status() === PHP_SESSION_ACTIVE) {
             return true;
         }
-        if (headers_sent()) {
+        if (\headers_sent()) {
             return false;
         }
         self::setCfg(array());  // makes sure all default's determined and set
-        $success = session_start();
-        \bdk\debug::_info('started', session_id());
+        $success = \session_start();
+        \bdk\Debug::_info('started', \session_id());
         if (self::$cfgStatic['regenOnStart']) {
             self::regenerateId();
         }
@@ -400,30 +393,30 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
             'useOnlyCookies'=> 'session.use_only_cookies',
         );
         foreach ($iniMap as $cfgKey => $iniKey) {
-            ini_set($iniKey, self::$cfgStatic[$cfgKey]);
+            \ini_set($iniKey, self::$cfgStatic[$cfgKey]);
         }
-        session_set_cookie_params(
+        \session_set_cookie_params(
             self::$cfgStatic['cookieLifetime'],
             self::$cfgStatic['cookiePath'],
             self::$cfgStatic['cookieDomain'],
             self::$cfgStatic['cookieSecure'],
             self::$cfgStatic['cookieHttponly'] // php >= 5.2.0
         );
-        if (ini_get('session.save_handler') == 'files' && !is_dir(self::$cfgStatic['savePath'])) {
+        if (\ini_get('session.save_handler') == 'files' && !\is_dir(self::$cfgStatic['savePath'])) {
             \bdk\Debug::_warn('savePath doesn\'t exist -> creating');
-            mkdir(self::$cfgStatic['savePath'], 0700, true);
+            \mkdir(self::$cfgStatic['savePath'], 0700, true);
         }
-        session_cache_expire(self::$cfgStatic['cacheExpire']);
-        session_cache_limiter(self::$cfgStatic['cacheLimiter']);
-        if (self::$cfgStatic['name'] != session_name()) {
-            session_name(self::$cfgStatic['name']);
+        \session_cache_expire(self::$cfgStatic['cacheExpire']);
+        \session_cache_limiter(self::$cfgStatic['cacheLimiter']);
+        if (self::$cfgStatic['name'] != \session_name()) {
+            \session_name(self::$cfgStatic['name']);
         }
         if (self::$cfgStatic['id']) {
             \bdk\Debug::_log('setting useStrictMode to false (session_id passed)');
-            ini_set('session.use_strict_mode', false);
-            session_id(self::$cfgStatic['id']);
+            \ini_set('session.use_strict_mode', false);
+            \session_id(self::$cfgStatic['id']);
         } else {
-            ini_set('session.use_strict_mode', self::$cfgStatic['useStrictMode']);
+            \ini_set('session.use_strict_mode', self::$cfgStatic['useStrictMode']);
         }
     }
 
@@ -438,23 +431,23 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
             return array();
         }
         $defaults = array(
-            'cacheExpire'   => session_cache_expire(),  // int (minutes) session_cache_expire()
+            'cacheExpire'   => \session_cache_expire(),  // int (minutes) session_cache_expire()
                                                         //   only applies when cacheLimiter != 'nocache'
-            'cacheLimiter'  => session_cache_limiter(), // session_cache_limiter()
+            'cacheLimiter'  => \session_cache_limiter(), // session_cache_limiter()
                                                         //   public | private_no_expire | private | nocache
-            'gcMaxlifetime' => (int) ini_get('session.gc_maxlifetime'),
-            'gcProbability' => (int) ini_get('session.gc_probability'),
-            'gcDivisor'     => (int) ini_get('session.gc_divisor'),
-            'savePath'      => (string) ini_get('session.save_path'),
+            'gcMaxlifetime' => (int) \ini_get('session.gc_maxlifetime'),
+            'gcProbability' => (int) \ini_get('session.gc_probability'),
+            'gcDivisor'     => (int) \ini_get('session.gc_divisor'),
+            'savePath'      => (string) \ini_get('session.save_path'),
             'name'          => empty(self::$cfgExplicitlySet['name'])
                                     ? self::cfgGetDefaultName()
                                     : null, // meh, who cares
         );
-        if (empty($defaults['savePath']) && ini_get('session.save_handler') == 'files') {
-            $defaults['savePath'] = sys_get_temp_dir();
+        if (empty($defaults['savePath']) && \ini_get('session.save_handler') == 'files') {
+            $defaults['savePath'] = \sys_get_temp_dir();
         }
         self::$status['cfgInitialized'] = true;
-        return array_diff_key($defaults, self::$cfgExplicitlySet);
+        return \array_diff_key($defaults, self::$cfgExplicitlySet);
     }
 
     /**
@@ -469,7 +462,7 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
     private static function cfgGetDefaultName()
     {
         $nameDefault = null;
-        $sessionNamePref = array('SESSIONID', session_name());
+        $sessionNamePref = array('SESSIONID', \session_name());
         foreach ($sessionNamePref as $nameTest) {
             $useCookies = isset(self::$cfgExplicitlySet['useCookies'])
                 ? self::$cfgExplicitlySet['useCookies']
@@ -503,10 +496,10 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
     private function setPublicMethods()
     {
         $refObj = new ReflectionObject($this);
-        self::$publicMethods = array_map(function (ReflectionMethod $refMethod) {
+        self::$publicMethods = \array_map(function (ReflectionMethod $refMethod) {
             return $refMethod->name;
         }, $refObj->getMethods(ReflectionMethod::IS_PUBLIC));
-        self::$publicMethods = array_diff(self::$publicMethods, array(
+        self::$publicMethods = \array_diff(self::$publicMethods, array(
             '__construct',
             '__callStatic',
             '__get',
@@ -579,7 +572,7 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
     public function count()
     {
         $this->start();
-        return count($_SESSION);
+        return \count($_SESSION);
     }
 
     /*

@@ -57,24 +57,21 @@ class Format
 	/**
 	 * return a formatted date
 	 *
-	 * @param string|integer $date   accepts string or timestamp
-	 * @param string         $format any PHP date format, or 'rel' - default = $this->cfg['date_format']
+	 * @param Datetime|string|integer $date   date to format
+	 * @param string                  $format any PHP date format, or 'rel' - default = $this->cfg['date_format']
 	 *
 	 * @return string
 	 */
 	public function date($date, $format = null)
 	{
-		$ts = \is_int($date)
-			? $date
-			: \strtotime($date);
-		if (empty($format)) {
+		$datetime = DateTimeUtil::getDateTime($date);
+        if (empty($format)) {
 			$format = $this->cfg['date_format'];
 		}
 		if ($format == 'rel') {
-			$datetime = new DateTime();
-			$date = $datetime->getRelTime($ts);
+			$date = DateTimeUtil::getRelTime($datetime);
 		} else {
-			$date = date($format, $ts);
+			$date = $datetime->format($format);
 		}
 		return $date;
 	}
@@ -95,6 +92,11 @@ class Format
 		$this->debug->groupEnd();
 		return $str;
 	}
+
+    public static function address($parts, $opts = array())
+    {
+        return \bdk\Geo\Address::format($parts, $opts);
+    }
 
 	/**
 	 * Mask a string, such as an account or cc-num

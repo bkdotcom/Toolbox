@@ -22,6 +22,8 @@ class Config
     {
         if (in_array($name, array('getCfg','setCfg'))) {
             return call_user_func_array(array($this, $name.'Instance'), $arguments);
+        } else {
+            throw new \BadMethodCallException('undefined method '.$name);
         }
     }
 
@@ -37,6 +39,8 @@ class Config
     {
         if (in_array($name, array('getCfg','setCfg'))) {
             return call_user_func_array(array('self', $name.'Static'), $arguments);
+        } else {
+            throw new \BadMethodCallException('undefined method '.$name);
         }
     }
 

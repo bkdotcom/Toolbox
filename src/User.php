@@ -81,7 +81,7 @@ class User
 	public function __construct($db, $cfg = array())
 	{
 		$this->debug = \bdk\Debug::getInstance();
-		$this->debug->groupCollapsed(__CLASS__.'->'.__FUNCTION__);
+		$this->debug->groupCollapsed(__METHOD__);
 		if (!defined('PASSWORD_DEFAULT')) {
 			require_once __DIR__.'/functions_password_hash.php';
 		}
@@ -143,7 +143,7 @@ class User
 	 */
 	public function authenticate($username, $password)
 	{
-		$this->debug->groupCollapsed(__CLASS__.'->'.__FUNCTION__);
+		$this->debug->groupCollapsed(__METHOD__);
 		$return = false;
 		$users = $this->search(array(
 			'username'	=> $username,
@@ -174,7 +174,7 @@ class User
 	 */
 	public function authenticateSocial($authResponse)
 	{
-		$this->debug->groupCollapsed(__CLASS__.'->'.__FUNCTION__);
+		$this->debug->groupCollapsed(__METHOD__);
 		$return = false;
 		$providerkey = $authResponse['auth']['uid'];
 		$query = 'SELECT * FROM `user_social` WHERE `providerkey` = '.$this->db->quoteValue($providerkey);
@@ -199,7 +199,7 @@ class User
 	 */
 	public function create($vals)
 	{
-		$this->debug->groupCollapsed(__CLASS__.'->'.__FUNCTION__);
+		$this->debug->groupCollapsed(__METHOD__);
 		$return = array(
 			'success' => true,
 			'errorDesc' => '',
@@ -271,7 +271,7 @@ class User
 				? $this->user['timezone']
 				: $tz_server_string;
 		}
-		$this->debug->groupCollapsed(__CLASS__.'->'.__FUNCTION__, $datetime, $format);
+		$this->debug->groupCollapsed(__METHOD__, $datetime, $format);
 		if (is_int($datetime)) {
 			$datetime = '@'.$datetime;
 		}
@@ -296,7 +296,7 @@ class User
 	 */
 	public function get($userid = null, $opts = array())
 	{
-		$this->debug->groupCollapsed(__CLASS__.'->'.__FUNCTION__, $userid);
+		$this->debug->groupCollapsed(__METHOD__, $userid);
 		$opts = array_merge(array(
 			'localtime' => true,	// true: return formatted date/time string for user's timezone
 		), $opts);
@@ -358,7 +358,7 @@ class User
 	 */
 	public function logout()
 	{
-		$this->debug->groupCollapsed(__CLASS__.'->'.__FUNCTION__);
+		$this->debug->groupCollapsed(__METHOD__);
 		if ($this->auth) {
 			$this->setPersistToken(false);	// more efficient to remove first (while session still exists)
 			$this->log('logout');
@@ -379,7 +379,7 @@ class User
 	 */
 	public function search($vals)
 	{
-		$this->debug->groupCollapsed(__CLASS__.'->'.__FUNCTION__);
+		$this->debug->groupCollapsed(__METHOD__);
 		$this->debug->log('vals', $vals);
 		$return = array();
 		if ($vals) {
@@ -426,13 +426,24 @@ class User
 	 */
 	public function setCurrent($userid)
 	{
-		$this->debug->groupCollapsed(__CLASS__.'->'.__FUNCTION__, $userid);
+		$this->debug->groupCollapsed(__METHOD__, $userid);
 		Session::start();
 		$user = $this->get($userid);
 		// initialize session array
 		ArrayUtil::path($_SESSION, $this->cfg['sessionPath'], array());
 		// create link to session array
-		$this->user = &ArrayUtil::path($_SESSION, $this->cfg['sessionPath']);
+		// $this->user = &ArrayUtil::path($_SESSION, $this->cfg['sessionPath']);
+        $path = $this->cfg['sessionPath'];
+        if (!\is_array($path)) {
+            $path = \array_filter(\preg_split('#[\./]#', $path), 'strlen');
+        }
+        $this->user =& $_SESSION;
+        foreach ($path as $k) {
+        	if (!isset($this->user[$k])) {
+        		$this->user[$k] = array();
+        	}
+        	$this->user =& $this->user[$k];
+        }
 		// load session array
 		$this->user = $user;
 		$this->user['_ts_cur'] = time();
@@ -451,7 +462,7 @@ class User
 	 */
 	public function setEmailToken($userid = null)
 	{
-		$this->debug->groupCollapsed(__CLASS__.'->'.__FUNCTION__);
+		$this->debug->groupCollapsed(__METHOD__);
 		if (!isset($userid)) {
 			$userid = $this->userid;
 		}
@@ -488,7 +499,7 @@ class User
 	 */
 	public function setPersistToken($set = true)
 	{
-		$this->debug->groupCollapsed(__CLASS__.'->'.__FUNCTION__);
+		$this->debug->groupCollapsed(__METHOD__);
 		$cookieParams = $this->cfg['persistCookie'];
 		$return = null;
 		if ($set) {
@@ -549,7 +560,7 @@ class User
 	 */
 	public function socialLink($provider, $providerKey, $userid = null)
 	{
-		$this->debug->groupCollapsed(__CLASS__.'->'.__FUNCTION__);
+		$this->debug->groupCollapsed(__METHOD__);
 		if ($userid === null) {
 			$userid = $this->userid;
 		}
@@ -595,7 +606,7 @@ class User
 	 */
 	public function socialUnlink($provider, $userid = null)
 	{
-		$this->debug->groupCollapsed(__CLASS__.'->'.__FUNCTION__);
+		$this->debug->groupCollapsed(__METHOD__);
 		if ($userid === null) {
 			$userid = $this->userid;
 		}
@@ -622,7 +633,7 @@ class User
 	 */
 	public function update($vals, $userid = null)
 	{
-		$this->debug->groupCollapsed(__CLASS__.'->'.__FUNCTION__);
+		$this->debug->groupCollapsed(__METHOD__);
 		$return = array(
 			'success'	=> true,
 			'errorDesc'	=> '',
@@ -703,7 +714,7 @@ class User
 	 */
 	public function verifyEmailToken($token)
 	{
-		$this->debug->groupCollapsed(__CLASS__.'->'.__FUNCTION__);
+		$this->debug->groupCollapsed(__METHOD__);
 		$return = false;
 		$token = base64_decode($token);
 		$vals = array(
@@ -736,7 +747,7 @@ class User
 	 */
 	private function genToken($tokenLen = null)
 	{
-		$this->debug->groupCollapsed(__CLASS__.'->'.__FUNCTION__);
+		$this->debug->groupCollapsed(__METHOD__);
 		$tokenLen = isset($tokenLen)
 			? $tokenLen
 			: $this->cfg['tokenLen'];
@@ -770,7 +781,7 @@ class User
 	 */
 	private function hashPassword($pwClear)
 	{
-		$this->debug->groupCollapsed(__CLASS__.'->'.__FUNCTION__);
+		$this->debug->groupCollapsed(__METHOD__);
 		$this->debug->time('hash');
 		$hash = password_hash($pwClear, $this->cfg['passwordHashAlgo'], $this->cfg['passwordHashOptions']);
 		$this->debug->log('hash', strlen($hash), $hash);
@@ -790,7 +801,7 @@ class User
 	 */
 	protected function log($event, $userid = null, $additionalData = null)
 	{
-		$this->debug->groupCollapsed(__CLASS__.'->'.__FUNCTION__, $event);
+		$this->debug->groupCollapsed(__METHOD__, $event);
 		if (!isset($userid)) {
 			$userid = $this->userid;
 		}
@@ -874,7 +885,7 @@ class User
 	 */
 	private function verifyPassword($pwClear, $pwHash)
 	{
-		$this->debug->groupCollapsed(__CLASS__.'->'.__FUNCTION__);
+		$this->debug->groupCollapsed(__METHOD__);
 		$return = false;
 		$hashAlgo = $this->cfg['passwordHashAlgo'];
 		$hashOpts = $this->cfg['passwordHashOptions'];
@@ -905,7 +916,7 @@ class User
 	 */
 	private function verifyPersistToken($username, $token)
 	{
-		$this->debug->groupCollapsed(__CLASS__.'->'.__FUNCTION__);
+		$this->debug->groupCollapsed(__METHOD__);
 		$return = false;
 		$vals = array(
 			'username'		=> $this->db->quoteValue($username),

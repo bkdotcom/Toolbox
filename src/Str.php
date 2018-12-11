@@ -26,14 +26,14 @@ class Str
 	{
 		$resArr = array();
 		$count = 0;
-		$expEncArr = explode($enclose, $str);
+		$expEncArr = \explode($enclose, $str);
 		foreach ($expEncArr as $EncItem) {
 			if ($count++%2) {
-				array_push($resArr, array_pop($resArr) . ($preserve?$enclose:'') . $EncItem.($preserve?$enclose:''));
+				\array_push($resArr, \array_pop($resArr) . ($preserve?$enclose:'') . $EncItem.($preserve?$enclose:''));
 			} else {
-				$expDelArr = explode($delim, $EncItem);
-				array_push($resArr, array_pop($resArr) . array_shift($expDelArr));
-				$resArr = array_merge($resArr, $expDelArr);
+				$expDelArr = \explode($delim, $EncItem);
+				\array_push($resArr, \array_pop($resArr) . \array_shift($expDelArr));
+				$resArr = \array_merge($resArr, $expDelArr);
 			}
 		}
 		return $resArr;
@@ -47,13 +47,13 @@ class Str
 	 * @param integer|string $size   string/int
 	 * @param boolean        $retInt (false)
 	 *
-	 * @return string|int returns int when retInt == true
+	 * @return string|integer returns int when retInt == true
 	 */
 	public static function getBytes($size, $retInt = false)
 	{
-		if (preg_match('/^([\d,.]+)\s?([kmgtp])b?$/i', $size, $matches)) {
-			$size = str_replace(',', '', $matches[1]);
-			switch (strtolower($matches[2])) {
+		if (\preg_match('/^([\d,.]+)\s?([kmgtp])b?$/i', $size, $matches)) {
+			$size = \str_replace(',', '', $matches[1]);
+			switch (\strtolower($matches[2])) {
 				case 'p':
 					$size *= 1024;
 					// no break
@@ -72,12 +72,12 @@ class Str
 		}
 		if (!$retInt) {
 			$units = array('B','kB','MB','GB','TB','PB');
-			$pow = pow(1024, ($i=floor(log($size, 1024))));
+			$pow = \pow(1024, ($i=\floor(\log($size, 1024))));
 			$size = $pow == 0
 				? '0 B'
-				: round($size/$pow, 2).' '.$units[$i];
+				: \round($size/$pow, 2).' '.$units[$i];
 		} else {
-			$size = round($size);
+			$size = \round($size);
 		}
 		return $size;
 	}
@@ -105,7 +105,7 @@ class Str
 	 */
 	public static function isUrl($url, $opts = array())
 	{
-		$opts = array_merge(array(
+		$opts = \array_merge(array(
 			'requireSchema' => true,
 		), $opts);
 		$urlRegEx = '@^'
@@ -125,7 +125,7 @@ class Str
 				.')?'
 			.')?'
 			.'$@';
-		return preg_match($urlRegEx, $url) > 0;
+		return \preg_match($urlRegEx, $url) > 0;
 	}
 
 	/**
@@ -179,52 +179,52 @@ class Str
 	public static function parse($str, $opts = array())
 	{
 		$params = array();
-		$opts = array_merge(
+		$opts = \array_merge(
 			array(
 				'conv_dot'		=> false,
 				'conv_space'	=> true,
 			),
 			$opts
 		);
-		if (( $opts['conv_dot'] || strpos($str, '.') === false )
-			&& ( $opts['conv_space'] || strpos($str, ' ') === false )
+		if (( $opts['conv_dot'] || \strpos($str, '.') === false )
+			&& ( $opts['conv_space'] || \strpos($str, ' ') === false )
 		) {
 			// just use parse_str
-			parse_str($str, $params);
+			\parse_str($str, $params);
 		} else {
-			$pairs = explode('&', $str);
+			$pairs = \explode('&', $str);
 			foreach ($pairs as $pair) {
 				$ptr = &$params;
-				$pair = array_map('urldecode', explode('=', $pair));
+				$pair = \array_map('urldecode', \explode('=', $pair));
 				$path = $pair[0];
 				$v = isset($pair[1])
 					? $pair[1]
 					: '';
 				$i = 0;
 				$re = '/^([^\[]*)/';
-				while (preg_match($re, $path, $matches)) {
+				while (\preg_match($re, $path, $matches)) {
 					$k = $matches[1];
-					$a = preg_match('/^\s?$/', $k);		// 0 or 1 whitepace = append
+					$a = \preg_match('/^\s?$/', $k);		// 0 or 1 whitepace = append
 					if ($i == 0) {
 						// ltrim spaces as parse_str() does
-						$k = ltrim($k, ' ');
-						if (strlen($k) == 0) {
+						$k = \ltrim($k, ' ');
+						if (\strlen($k) == 0) {
 							break;
 						}
 						if ($opts['conv_space']) {
-							$k = str_replace(' ', '_', $k);
+							$k = \str_replace(' ', '_', $k);
 						}
 						$re = '/^\[([^\]]*?)\](\s*)/';	// change regex
 					} elseif (!empty($matches[2])) {
 						$path = '';	// space on the end... this is the end of the path
 					}
-					$path = substr($path, strlen($matches[0]));	// remaining path
+					$path = \substr($path, \strlen($matches[0]));	// remaining path
 					if ($path !== false) {
 						if ($a) {
 							$ptr[] = array();
-							end($ptr);
-							$k = key($ptr);
-						} elseif (!isset($ptr[ $k ]) || is_string($ptr[ $k ])) {
+							\end($ptr);
+							$k = \key($ptr);
+						} elseif (!isset($ptr[ $k ]) || \is_string($ptr[ $k ])) {
 							$ptr[ $k ] = array();
 						}
 						$ptr = &$ptr[$k];
@@ -258,7 +258,7 @@ class Str
 	 */
 	public static function plural($count, $single, $plural = null)
 	{
-		if (is_null($plural)) {
+		if (\is_null($plural)) {
 			$plural = $single.'s';
 		}
 		return $count == 1
@@ -276,9 +276,9 @@ class Str
 	 */
 	public static function quickTemp($template = '', $values = array())
 	{
-		if (!is_array($values) && !is_object($values)) {
-			$values = func_get_args();
-			array_shift($values);
+		if (!\is_array($values) && !\is_object($values)) {
+			$values = \func_get_args();
+			\array_shift($values);
 		}
 		self::$temp = $values;
 		// $regex = '/\\\\?[<\[](::|%)\s*(.*?)\s*\\1[>\]]/';
@@ -289,7 +289,7 @@ class Str
         # <!--::\s*+(.*?)\s*+::-->|    # <!--::a::-->
         # \/\*::\s*(.*?)\s*::\*\/      # /*::a::*/
         )@sx';
-		$return = preg_replace_callback($regex, array(__CLASS__, 'quickTempCallback'), $template);
+		$return = \preg_replace_callback($regex, array(__CLASS__, 'quickTempCallback'), $template);
 		self::$temp = null;
 		return $return;
 	}
@@ -303,19 +303,19 @@ class Str
 	 */
 	private static function quickTempCallback($matches)
 	{
-		for ($i=1, $count=count($matches); $i<$count; $i++) {
-			if (strlen($matches[$i])) {
+		for ($i=1, $count=\count($matches); $i<$count; $i++) {
+			if (\strlen($matches[$i])) {
 				$key = $matches[$i];
 				break;
 			}
 		}
 		$return = null;
-		if (substr($matches[0], 0, 1) == '\\') {
-			$return = ltrim($matches[0], '\\');
-		} elseif (is_array(self::$temp)) {
+		if (\substr($matches[0], 0, 1) == '\\') {
+			$return = \ltrim($matches[0], '\\');
+		} elseif (\is_array(self::$temp)) {
 			$arrayUtil = new ArrayUtil();
 			$return = $arrayUtil->path(self::$temp, $key);
-		} elseif (is_object(self::$temp) && isset(self::$temp->$key)) {
+		} elseif (\is_object(self::$temp) && isset(self::$temp->$key)) {
 			$return = self::$temp->$key;
 		}
 		if ($return === null) {
@@ -324,7 +324,7 @@ class Str
 					.'\((.+)\)|'	// (param1, ...)
 					.'\s+((?:[\'"\$]|array|true|false|null).*)$'	// params not inside parens
 				.')/s';
-			if (preg_match($regex, $key, $matches)) {
+			if (\preg_match($regex, $key, $matches)) {
 				#$this->debug->log('func()');
 				$args = !empty($matches[2])
 					? $matches[2]
@@ -336,20 +336,20 @@ class Str
 					$code = !empty($_SERVER['REDIRECT_STATUS'])
 						? $_SERVER['REDIRECT_STATUS']
 						: 200;
-					header('Status:', true, $code);
+					\header('Status:', true, $code);
 				}
 			} else {
 				#$this->debug->log('unquoted string arg');
-				$args	= explode(' ', $key, 2);
-				$key	= array_shift($args);
+				$args	= \explode(' ', $key, 2);
+				$key	= \array_shift($args);
 			}
 			#$this->debug->log('args', $args);
-			if (is_object(self::$temp) && method_exists(self::$temp, 'get'.ucfirst($key))) {
-				$method = 'get'.ucfirst($key);
+			if (is_object(self::$temp) && method_exists(self::$temp, 'get'.\ucfirst($key))) {
+				$method = 'get'.\ucfirst($key);
 				#$this->debug->info('method exists', $method);
-				$return = call_user_func_array(array(self::$temp, $method), $args);
-			} elseif (function_exists('get_'.$key) && !in_array($key, array('class'))) {
-				$return = call_user_func_array('get_'.$key, $args);
+				$return = \call_user_func_array(array(self::$temp, $method), $args);
+			} elseif (\function_exists('get_'.$key) && !\in_array($key, array('class'))) {
+				$return = \call_user_func_array('get_'.$key, $args);
 			} else {
 				#$this->debug->warn('no method or get_ function');
 			}
@@ -415,7 +415,7 @@ class Str
 			'ǽ' => 'a',
         );
 		$str = self::toUtf8($str);
-        $str = strtr($str, $map);
+        $str = \strtr($str, $map);
 		return $str;
 	}
 
@@ -428,18 +428,22 @@ class Str
      */
     public static function toCamelCase($str)
     {
-		do {
-			preg_match_all('/([a-zA-Z])([A-Z])/', $str, $matches, PREG_SET_ORDER);
+		/*
+        do {
+			\preg_match_all('/([a-zA-Z])([A-Z])/', $str, $matches, PREG_SET_ORDER);
 			foreach ($matches as $match) {
-				$str = str_replace($match[0], $match[1].' '.$match[2], $str);
+				$str = \str_replace($match[0], $match[1].' '.$match[2], $str);
 			}
 		} while ($matches);
-		$str = strtolower($str);
-		$str = str_replace('_', ' ', $str);
-		$str = ucwords($str);
-		$str = str_replace(' ', '', $str);
-		$str[0] = strtolower($str[0]);
-		return $str;
+		$str = \strtolower($str);
+		$str = \str_replace('_', ' ', $str);
+		$str = \ucwords($str);
+		$str = \str_replace(' ', '', $str);
+		$str[0] = \strtolower($str[0]);
+        */
+        return \preg_replace_callback('#_([a-z0-9])#', function ($matches) {
+            return \strtoupper($matches[1]);
+        }, $str);
 	}
 
 	/**

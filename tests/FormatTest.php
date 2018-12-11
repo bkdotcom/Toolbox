@@ -67,7 +67,7 @@ class FormatTest extends \PHPUnit\Framework\TestCase
 			),
 			array(
 				'params' => array('14798569971', 	array('markup'=>true) ),
-				'expect' => '<span class="tel nowrap"><span class="value" style="display:none;">+14798569971</span>(479) 856-9971</span>',
+				'expect' => '<span class="nowrap tel"><span class="value" style="display:none;">+14798569971</span>(479) 856-9971</span>',
 			),
 			array(
 				'params' => array('856-9971',		array() ),

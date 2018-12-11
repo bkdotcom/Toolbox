@@ -13,7 +13,8 @@ class Html extends Config
 {
 
     static protected $cfgStatic = array(
-        'emptyTags' => array('area','base','br','col','command','embed','hr','img','input','keygen','link','meta','param','source','track','wbr'),
+        // 'command','keygen',
+        'emptyTags' => array('area','base','br','col','embed','hr','img','input','link','meta','param','source','track','wbr'),
         'selfUrl' => array(
             'keepParams'    => true,
             'fullUrl'       => false,
@@ -460,39 +461,15 @@ class Html extends Config
     /**
      * Parse string -o- attributes into a key=>value array
      *
-     * @param string  $str    string to parse
-     * @param boolean $decode (true)whether to decode special chars
+     * @param string  $str        string to parse
+     * @param boolean $decode     (true)whether to decode special chars
+     * @param boolean $decodeData (true) whether to decode data attribs
      *
      * @return array
      */
-    public static function parseAttribString($str, $decode = true)
+    public static function parseAttribString($str, $decode = true, $decodeData = true)
     {
-        $attribs = array();
-        $regexAttribs = '/\b([\w\-]+)\b(?: \s*=\s*(["\'])(.*?)\\2 | \s*=\s*(\S+) )?/xs';
-        preg_match_all($regexAttribs, $str, $matches);
-        $keys = array_map('strtolower', $matches[1]);
-        $values = ArrayUtil::mergeDeep($matches[3], $matches[4], array(
-            'empty_overwrites'=>false,
-            'int_keys'=>'overwrite',
-        ));
-        foreach ($keys as $i => $k) {
-            $val = $values[$i];
-            if ($val === '' && !preg_match('/'.$k.'\s*=/', $str)) {
-                $val = true;    // it wasn't key="" , but rather just key
-            } elseif ($k == $val) {
-                $val = true;
-            }
-            $attribs[$k] = $val;
-        }
-        \ksort($attribs);
-        if ($decode) {
-            foreach ($attribs as $k => $v) {
-                if (\is_string($v)) {
-                    $attribs[$k] = \htmlspecialchars_decode($v);
-                }
-            }
-        }
-        return $attribs;
+        return \bdk\Debug\Utilities::parseAttribString($str, $decode, $decodeData);
     }
 
     /**
@@ -510,22 +487,7 @@ class Html extends Config
      */
     public static function parseTag($tag)
     {
-        $regexTag = '#<([^\s>]+)([^>]*)>(.*)</\\1>#is';
-        $regexTag2 = '#^<?\/?(.*?)\/?>?$#';
-        if (preg_match($regexTag, $tag, $matches)) {
-            $return = array(
-                'tagname' => $matches[1],
-                'attribs' => self::parseAttribString($matches[2]),
-                'innerhtml' => $matches[3],
-            );
-        } elseif (preg_match($regexTag2, $tag, $matches)) {
-            $return = array(
-                'tagname' => $matches[1],
-                'attribs' => self::parseAttribString($matches[2]),
-                'innerhtml' => null,
-            );
-        }
-        return $return;
+        return \bdk\Debug\Utilities::parseTag($tag);
     }
 
     /**

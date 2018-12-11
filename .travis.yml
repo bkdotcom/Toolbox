@@ -16,17 +16,15 @@ matrix:
     - php: hhvm
     - php: hhvm-nightly
 install:
-  - |
-    php -v
-    composer install
+  - composer install
 before_script:
   - |
     echo "TRAVIS_PHP_VERSION:" $TRAVIS_PHP_VERSION;
+    php -v;
     if [ ${TRAVIS_PHP_VERSION:0:4} == "hhvm" ]; then
       #hhvm -d hhvm.php7.all=1;
       #curl -sSfL -o ~/.phpenv/versions/hhvm/bin/phpunit https://phar.phpunit.de/phpunit-7.0.phar;
       curl -sSfL -o ~/.phpenv/versions/hhvm/bin/phpunit https://phar.phpunit.de/phpunit-5.7.phar;
-      ~/.phpenv/versions/hhvm/bin/phpunit --version
     else
-      curl -sSfL -o ~/.phpenv/versions/hhvm/bin/phpunit https://phar.phpunit.de/phpunit-5.7.phar;
+      #curl -sSfL -o ~/.phpenv/versions/hhvm/bin/phpunit https://phar.phpunit.de/phpunit-5.7.phar;
     fi

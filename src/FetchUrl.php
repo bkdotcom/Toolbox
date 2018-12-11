@@ -188,29 +188,31 @@ class FetchUrl extends Config
      */
     private function extractHeaders($str)
     {
-        $header_start = 0;
+        $this->debug->log(__METHOD__);
+        $this->debug->groupUncollapse();
+        $headerStart = 0;
         #$this->debug->log(('top', \substr($return, 0, $this->curlInfo['header_size']));
-        $header_len_stack = array();
+        $headerLenStack = array();
         $i = 0;
         while (true) {
-            $header_end     = \strpos($str, "\r\n\r\n", $header_start);
-            $header_length  = $header_end-$header_start;
-            $headers        = \substr($str, $header_start, $header_length);
-            $header_start   = $header_end+4;
-            $header_len_stack[] = \strlen($headers)+4;
+            $headerEnd     = \strpos($str, "\r\n\r\n", $headerStart);
+            $headerLength  = $headerEnd - $headerStart;
+            $headers       = \substr($str, $headerStart, $headerLength);
+            $headerStart   = $headerEnd+4;
+            $headerLenStack[] = \strlen($headers)+4;
             #$this->debug->log('headers', \str_replace(array("\r","\n"), array('|','|'), $headers));
-            if (\count($header_len_stack) > $this->curlInfo['redirect_count']) {
+            if (\count($headerLenStack) > $this->curlInfo['redirect_count']) {
                 #$this->debug->log('header_len_stack','['.\implode(',',$header_len_stack).']');
                 $sum = 0;
                 for ($j=$i; $j>=0; $j--) {
-                    $sum += $header_len_stack[$j];
+                    $sum += $headerLenStack[$j];
                     if ($sum == $this->curlInfo['header_size']) {
                         #$this->debug->info('found headers');
                         break 2;
                     }
                 }
             }
-            if ($header_end === false || $i > 20) {
+            if ($headerEnd === false || $i > 20) {
                 $this->debug->warn('error parsing headers');
                 break;
             }
@@ -369,7 +371,7 @@ class FetchUrl extends Config
         } else {
             \curl_close($curl);   // close early to avoid fatal memory allocation error on large returns
             if ($this->options['CURLOPT_HEADER']) {
-                // $this->debug->info('redirect_count', $this->curlInfo['redirect_count']);
+                $this->debug->info('redirect_count', $this->curlInfo['redirect_count']);
                 $this->debug->info('header_size', $this->curlInfo['header_size']);
                 $headers = $this->extractHeaders($this->fetchResponse);
                 $headers = Net::parseHeaders($headers);

@@ -119,7 +119,7 @@ class ArrayTest extends \PHPUnit\Framework\TestCase
 	/**
 	 * @param array $array returned from test_read_delim_file()
 	 *
-	 * @return void
+	 * @return       void
 	 * @dataProvider arrayProvider
 	 */
 	public function testSearchFields($array)
@@ -134,14 +134,18 @@ class ArrayTest extends \PHPUnit\Framework\TestCase
 		$found = ArrayUtil::searchFields($array, array('col1'=>'joe','col2'=>'bob'), true);
 		$this->assertEquals('joe', $found['k6']['col1']);
 		$this->assertEquals('bob', $found['k6']['col2']);
+        // test finding/returning single match
+        $found = ArrayUtil::searchFields($array, array('col1'=>'a'), array('first'=>true));
+        $this->assertSame('k2', $found['key']);
 		// test no match found
 		$this->assertSame(array(), ArrayUtil::searchFields($array, array('col1'=>'oo'), true));
+        $this->assertSame(false, ArrayUtil::searchFields($array, array('col1'=>'boo'), array('first'=>true)));
 	}
 
 	/**
 	 * @param array $array returned from test_read_delim_file()
 	 *
-	 * @return void
+	 * @return       void
 	 * @dataProvider arrayProvider
 	 */
 	public function testFieldSort($array)
@@ -155,7 +159,7 @@ class ArrayTest extends \PHPUnit\Framework\TestCase
 	/**
 	 * @param array $rows returned from test_read_delim_file()
 	 *
-	 * @return void
+	 * @return       void
 	 * @dataProvider arrayProvider
 	 */
 	public function testUniqueCol($rows)

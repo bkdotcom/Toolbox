@@ -87,6 +87,149 @@ class Email extends Config
     }
 
     /**
+     * Get address array from passed address string or addresses
+     *
+     * @param mixed $addresses address / addresses
+     *
+     * @return array  (email => name, x => email)
+     */
+    public static function addressesGet($addresses)
+    {
+        // $this->debug->groupCollapsed(__CLASS__.'->'.__FUNCTION__);
+        $return = array();
+        if (!is_array($addresses)) {
+            $addresses = self::addressParse($addresses);
+        }
+        foreach ($addresses as $k => $v) {
+            if (is_array($v)) {
+                // parsed address
+                if (!empty($v['name'])) {
+                    $return[ $v['email'] ] = $v['name'];
+                } else {
+                    $return[] = $v['email'];
+                }
+            } elseif (is_int($k)) {
+                $v = self::addressParse($v);
+                $v = array_shift($v);
+                // $this->debug->log($k, $v);
+                if (!empty($v['name'])) {
+                    $return[ $v['email'] ] = $v['name'];
+                } else {
+                    $return[] = $v['email'];
+                }
+            } else {
+                // email => name
+                $return[$k] = $v;
+            }
+        }
+        // $this->debug->groupEnd();
+        return $return;
+    }
+
+    /**
+     * Returns email address string
+     *
+     * @param mixed $addresses addresses string or array
+     *
+     * @return string
+     */
+    public static function addressBuildString($addresses)
+    {
+        $addresses = self::addressesGet($addresses);
+        $addressesNew = array();
+        foreach ($addresses as $k => $v) {
+            $name = null;
+            if (is_int($k)) {
+                $address = $v;
+            } else {
+                $name = $v;
+                $address = $k;
+            }
+            if (!isset($_SERVER['WINDIR']) && $name) {
+                if (strpos($name, ',')) {
+                    $name = addcslashes($name, '()');
+                    $name = '"'.$name.'"';
+                }
+                $address = $name.' <'.$address.'>';
+            }
+            $addressesNew[] = $address;
+        }
+        return implode(', ', $addressesNew);
+    }
+
+    /**
+     * parse address string
+     *
+     * @param string $addressString rfc-822 address list
+     *
+     * @return array (name & email)
+     * @see    http://stackoverflow.com/questions/6609195/parse-rfc-822-compliant-addresses-in-a-to-header
+     */
+    public static function addressParse($addressString)
+    {
+        // $this->debug->groupCollapsed(__CLASS__.'->'.__FUNCTION__);
+        // $this->debug->log('addressString', $addressString);
+        $pattern = '/^(?:"?((?:[^"\\\\]|\\\\.)+)"?\s)?'             // name
+            .'<?([a-z0-9._%-]+@[a-z0-9.-]+\\.[a-z]{2,4})>?$/i';     // email
+        $addresses = str_getcsv($addressString);
+        // $this->debug->log('addresses', $addresses);
+        $result = array();
+        foreach ($addresses as $address) {
+            $address = trim($address);
+            if (preg_match($pattern, $address, $matches)) {
+                $item = array();
+                if ($matches[1] != '') {
+                    $item['name'] = stripcslashes($matches[1]);
+                }
+                $item['email'] =  $matches[2];
+                $result[] = $item;
+            }
+        }
+        // $this->debug->groupEnd();
+        return $result;
+    }
+
+    /**
+     * validate an email addrses
+     *
+     * @param string $email email address
+     *
+     * @return string|boolean returns false if invalid
+     */
+    public static function addressValidate($email)
+    {
+        // $this->debug->groupCollapsed(__CLASS__.'->'.__FUNCTION__);
+        $return = false;
+        $regex = '/^'
+            .'[a-z0-9_]+([_\.-][a-z0-9]+)*'     // user
+            .'@'
+            .'([a-z0-9]+([\.-][a-z0-9]+)*)+'    // domain
+            .'(\.[a-z]{2,})'                    // sld, tld
+            .'$/i';
+        $email = trim($email);
+        if (preg_match($regex, $email, $matches)) {
+            // $this->debug->log('properly formatted');
+            $hostname   = strtolower($matches[2].$matches[4]);
+            $ipaddress  = gethostbyname($hostname);     // A record
+            // $this->debug->log('hostname', $hostname);
+            // $this->debug->log('ipaddress', $ipaddress);
+            $return = $email;
+            if ($ipaddress != $hostname) {
+                // $this->debug->log('A record', $ipaddress);
+            } elseif ($mxrecord = getmxrr($hostname, $mxhosts)) {
+                // $this->debug->log('getmxrr('.$hostname.')', $mxrecord, $mxhosts);
+            } elseif (strpos($_SERVER['SERVER_NAME'], $hostname)) {
+                // $this->debug->log('email domain matches server domain');
+            } else {
+                // $this->debug->log('warn', 'unable to verify');
+                $return = false;
+            }
+        }
+        // $this->debug->groupEnd();
+        return $return;
+    }
+
+    /**
      * [getAttachmentArray description]
      *
      * @param array $attachment attachment
@@ -325,148 +468,5 @@ class Email extends Config
             .$strDebug
             .'</pre>'
         );
-    }
-
-    /**
-     * Get address array from passed address string or addresses
-     *
-     * @param mixed $addresses address / addresses
-     *
-     * @return array  (email => name, x => email)
-     */
-    public static function addressesGet($addresses)
-    {
-        // $this->debug->groupCollapsed(__CLASS__.'->'.__FUNCTION__);
-        $return = array();
-        if (!is_array($addresses)) {
-            $addresses = self::addressParse($addresses);
-        }
-        foreach ($addresses as $k => $v) {
-            if (is_array($v)) {
-                // parsed address
-                if (!empty($v['name'])) {
-                    $return[ $v['email'] ] = $v['name'];
-                } else {
-                    $return[] = $v['email'];
-                }
-            } elseif (is_int($k)) {
-                $v = self::addressParse($v);
-                $v = array_shift($v);
-                // $this->debug->log($k, $v);
-                if (!empty($v['name'])) {
-                    $return[ $v['email'] ] = $v['name'];
-                } else {
-                    $return[] = $v['email'];
-                }
-            } else {
-                // email => name
-                $return[$k] = $v;
-            }
-        }
-        // $this->debug->groupEnd();
-        return $return;
-    }
-
-    /**
-     * Returns email address string
-     *
-     * @param mixed $addresses addresses string or array
-     *
-     * @return string
-     */
-    public static function addressBuildString($addresses)
-    {
-        $addresses = self::addressesGet($addresses);
-        $addressesNew = array();
-        foreach ($addresses as $k => $v) {
-            $name = null;
-            if (is_int($k)) {
-                $address = $v;
-            } else {
-                $name = $v;
-                $address = $k;
-            }
-            if (!isset($_SERVER['WINDIR']) && $name) {
-                if (strpos($name, ',')) {
-                    $name = addcslashes($name, '()');
-                    $name = '"'.$name.'"';
-                }
-                $address = $name.' <'.$address.'>';
-            }
-            $addressesNew[] = $address;
-        }
-        return implode(', ', $addressesNew);
-    }
-
-    /**
-     * parse address string
-     *
-     * @param string $addressString rfc-822 address list
-     *
-     * @return array (name & email)
-     * @see    http://stackoverflow.com/questions/6609195/parse-rfc-822-compliant-addresses-in-a-to-header
-     */
-    public static function addressParse($addressString)
-    {
-        // $this->debug->groupCollapsed(__CLASS__.'->'.__FUNCTION__);
-        // $this->debug->log('addressString', $addressString);
-        $pattern = '/^(?:"?((?:[^"\\\\]|\\\\.)+)"?\s)?'             // name
-            .'<?([a-z0-9._%-]+@[a-z0-9.-]+\\.[a-z]{2,4})>?$/i';     // email
-        $addresses = str_getcsv($addressString);
-        // $this->debug->log('addresses', $addresses);
-        $result = array();
-        foreach ($addresses as $address) {
-            $address = trim($address);
-            if (preg_match($pattern, $address, $matches)) {
-                $item = array();
-                if ($matches[1] != '') {
-                    $item['name'] = stripcslashes($matches[1]);
-                }
-                $item['email'] =  $matches[2];
-                $result[] = $item;
-            }
-        }
-        // $this->debug->groupEnd();
-        return $result;
-    }
-
-    /**
-     * validate an email addrses
-     *
-     * @param string $email email address
-     *
-     * @return string|boolean returns false if invalid
-     */
-    public static function addressValidate($email)
-    {
-        // $this->debug->groupCollapsed(__CLASS__.'->'.__FUNCTION__);
-        $return = false;
-        $regex = '/^'
-            .'[a-z0-9_]+([_\.-][a-z0-9]+)*'     // user
-            .'@'
-            .'([a-z0-9]+([\.-][a-z0-9]+)*)+'    // domain
-            .'(\.[a-z]{2,})'                    // sld, tld
-            .'$/i';
-        $email = trim($email);
-        if (preg_match($regex, $email, $matches)) {
-            // $this->debug->log('properly formatted');
-            $hostname   = strtolower($matches[2].$matches[4]);
-            $ipaddress  = gethostbyname($hostname);     // A record
-            // $this->debug->log('hostname', $hostname);
-            // $this->debug->log('ipaddress', $ipaddress);
-            $return = $email;
-            if ($ipaddress != $hostname) {
-                // $this->debug->log('A record', $ipaddress);
-            } elseif ($mxrecord = getmxrr($hostname, $mxhosts)) {
-                // $this->debug->log('getmxrr('.$hostname.')', $mxrecord, $mxhosts);
-            } elseif (strpos($_SERVER['SERVER_NAME'], $hostname)) {
-                // $this->debug->log('email domain matches server domain');
-            } else {
-                // $this->debug->log('warn', 'unable to verify');
-                $return = false;
-            }
-        }
-        // $this->debug->groupEnd();
-        return $return;
     }
 }

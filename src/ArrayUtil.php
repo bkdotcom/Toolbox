@@ -37,7 +37,7 @@ class ArrayUtil
      */
     public static function fieldSort($array, $fields)
     {
-        if (!is_array($fields)) {
+        if (!\is_array($fields)) {
             $fields = array($fields);
         }
         self::$temp = $fields;
@@ -48,7 +48,7 @@ class ArrayUtil
         foreach ($array as $k => $row) {
             $array[$k] = array($i++, $row);
         }
-        uasort($array, array(__CLASS__, 'fieldSortFunc'));
+        \uasort($array, array(__CLASS__, 'fieldSortFunc'));
         foreach ($array as $k => $row) {
             $array[$k] = $row[1];
         }
@@ -67,7 +67,7 @@ class ArrayUtil
      */
     protected static function fieldSortFunc($oa1, $oa2)
     {
-        $count = count(self::$temp);
+        $count = \count(self::$temp);
         for ($i=0; $i<$count; $i++) {
             $f = self::$temp[$i];
             $fNext = isset(self::$temp[$i+1])
@@ -75,21 +75,21 @@ class ArrayUtil
                 : null;
             $a1 = $oa1[1];
             $a2 = $oa2[1];
-            if (!in_array($f, array('ASC','DESC'), true)) {
+            if (!\in_array($f, array('ASC','DESC'), true)) {
                 // DESC & ASC will be skipped
                 $s1 = null;
-                if (is_array($a1) && isset($a1[$f])) {
+                if (\is_array($a1) && isset($a1[$f])) {
                     $s1 = $a1[$f];
-                } elseif (is_object($a1)) {
+                } elseif (\is_object($a1)) {
                     $s1 = $a1->$f;
                 }
                 $s2 = null;
-                if (is_array($a2) && isset($a2[$f])) {
+                if (\is_array($a2) && isset($a2[$f])) {
                     $s2 = $a2[$f];
-                } elseif (is_object($a2)) {
+                } elseif (\is_object($a2)) {
                     $s2 = $a2->$f;
                 }
-                $cmp = strnatcasecmp($s1, $s2);
+                $cmp = \strnatcasecmp($s1, $s2);
                 if ($fNext == 'DESC') {
                     $cmp *= -1;
                 }
@@ -133,7 +133,7 @@ class ArrayUtil
      */
     public static function implodeDelim($values, $char = ',')
     {
-        if (is_array($char)) {  // params were originally swapped
+        if (\is_array($char)) {  // params were originally swapped
             list($values, $char) = array($char, $values);
         }
         if (empty($values)) {
@@ -142,14 +142,14 @@ class ArrayUtil
         $str = '';
         foreach ($values as $k => $v) {
             if ($char == ',') {
-                $v = str_replace('"', '""', $v);
+                $v = \str_replace('"', '""', $v);
             }
-            if (preg_match('/['.$char.'\n"]/', $v)) {
+            if (\preg_match('/['.$char.'\n"]/', $v)) {
                 $v = '"'.$v.'"';
             }
             $values[$k] = $v;
         }
-        $str = implode($char, $values);
+        $str = \implode($char, $values);
         return $str;
     }
 
@@ -164,10 +164,10 @@ class ArrayUtil
     {
         // is_array($data) && ( empty($data) || array_keys($data) === range(0, count($data)-1) );
         $hash = false;
-        if (is_array($array) && !empty($array)) {
-            $keys = array_keys($array);
+        if (\is_array($array) && !empty($array)) {
+            $keys = \array_keys($array);
             foreach ($keys as $k) {
-                if (!is_int($k)) {
+                if (!\is_int($k)) {
                     $hash = true;
                     break;
                 }
@@ -187,16 +187,16 @@ class ArrayUtil
      */
     public static function keyRename(&$array, $from, $to)
     {
-        if (is_array($array) && $from !== $to) {
-            $keys = array_keys($array);
-            $pos = array_search($from, $keys, true);
+        if (\is_array($array) && $from !== $to) {
+            $keys = \array_keys($array);
+            $pos = \array_search($from, $keys, true);
             if ($pos !== false) {
-                $next_key = isset($keys[$pos+1])
+                $nextKey = isset($keys[$pos+1])
                     ? $keys[$pos+1]
                     : null;
                 $value = $array[$from];
                 unset($array[$from]);
-                self::keySplice($array, $next_key, 0, array($to=>$value));
+                self::keySplice($array, $nextKey, 0, array($to=>$value));
             }
         }
         return;
@@ -207,131 +207,127 @@ class ArrayUtil
      * 26-May-2002 07:02
      *
      * @param array   $input       input array
-     * @param string  $key_ofs     key of offset
+     * @param string  $keyOfs      key of offset
      * @param integer $length      number of values to remove at offset position
      * @param mixed   $replacement values to insert
      *
      * @return array
      * @author paule at cs dot tamu dot edu
      */
-    public static function keySplice(&$input, $key_ofs, $length = null, $replacement = '%_null_%')
+    public static function keySplice(&$input, $keyOfs, $length = null, $replacement = '%_null_%')
     {
         // Adjust the length if it was negative or not passed
-        $ret_array = array();
-        $new_array = array();
-        $key_found = false;
-        if (is_string($key_ofs) && preg_match('/^(?!0)\d+$/', $key_ofs)) {
-            $key_ofs = (int) $key_ofs;
+        $retArray = array();
+        $newArray = array();
+        $keyFound = false;
+        if (\is_string($keyOfs) && \preg_match('/^(?!0)\d+$/', $keyOfs)) {
+            $keyOfs = (int) $keyOfs;
         }
-        $count = is_int($length)
+        $count = \is_int($length)
             ? $length
             : 0;
-        #$this->debug->log('key_ofs', $key_ofs);
-        if (is_array($input)) {
+        #$this->debug->log('key_ofs', $keyOfs);
+        if (\is_array($input)) {
             // Cycle through input
             foreach ($input as $k => $v) {
                 #$this->debug->log('k', $k);
-                if (!$key_found) {
+                if (!$keyFound) {
                     #$this->debug->log('&nbsp; hasn\'t been found');
-                    if ($k === $key_ofs) {
+                    if ($k === $keyOfs) {
                         #$this->debug->info(' found');
-                        $key_found = true;
-                        if (is_array($replacement)) {
-                            foreach ($replacement as $k_r => $v_r) {
-                                $new_array[$k_r] = $v_r;
+                        $keyFound = true;
+                        if (\is_array($replacement)) {
+                            foreach ($replacement as $kR => $vR) {
+                                $newArray[$kR] = $vR;
                             }
                         } elseif ($replacement !== '%_null_%') {
-                            $new_array[] = $replacement;
+                            $newArray[] = $replacement;
                         }
                     } else {
-                        $new_array[$k] = $v;
+                        $newArray[$k] = $v;
                     }
                 }
-                if ($key_found) {
+                if ($keyFound) {
                     #$this->debug->log('&nbsp; has been found');
                     if ($count > 0) {
                         #$this->debug->log(' skipping '.$k);
-                        $ret_array[$k] = $v;
+                        $retArray[$k] = $v;
                         $count--;
                     } else {
-                        if (is_int($k) && array_key_exists($k, $new_array)) {
-                            $new_array[] = $v;
+                        if (\is_int($k) && \array_key_exists($k, $newArray)) {
+                            $newArray[] = $v;
                         } else {
-                            $new_array[$k] = $v;
+                            $newArray[$k] = $v;
                         }
                     }
                 }
             }
-            if (!$key_found) {
+            if (!$keyFound) {
                 #$this->debug->warn('never found insert key');
-                if (is_array($replacement)) {
-                    foreach ($replacement as $k_r => $v_r) {
-                        $new_array[$k_r] = $v_r;
+                if (\is_array($replacement)) {
+                    foreach ($replacement as $kR => $vR) {
+                        $newArray[$kR] = $vR;
                     }
                 } elseif ($replacement !== '%_null_%') {
-                    $new_array[] = $replacement;
+                    $newArray[] = $replacement;
                 }
             }
             // Finish up
-            #$this->debug->log('input length changed by : '.(count($new_array)-count($input)));
-            $input = $new_array;
+            $input = $newArray;
         }
-        #$this->debug->log('new_array', $new_array);
-        #$this->debug->log('ret_array', $ret_array);
-        return $ret_array;
+        return $retArray;
     }
 
     /**
      * Apply function to array values
      *
      * @param string $function callback function
-     * @param mixed  $a_or_v   array or value
+     * @param mixed  $aOrV   array or value
      * @param array  $params   optional paramaters to pass to callback
      * @param array  $opts     options
      * @param array  $hist     @internal
      *
      * @return type
      */
-    public static function mapDeep($function, $a_or_v, $params = array(), $opts = array(), &$hist = array())
+    public static function mapDeep($function, $aOrV, $params = array(), $opts = array(), &$hist = array())
     {
-        $opts = array_merge(array(
+        $opts = \array_merge(array(
             'callback_expects'  => 'scalar',    // 'scalar', 'array', 'both'
             'resource'  => false,               // whether or not to map or skip the type: resource
             'depth'     => 0,                   // @interal
         ), $opts);
-        $callback_params = $params;
-        if (!is_array($callback_params)) {
-            $callback_params = !is_null($callback_params)
-                ? array($callback_params)
+        $callbackParams = $params;
+        if (!\is_array($callbackParams)) {
+            $callbackParams = !\is_null($callbackParams)
+                ? array($callbackParams)
                 : array();
         }
-        $callback_params = array_merge(array($a_or_v), $callback_params);
-        if (is_array($a_or_v)) {
+        $callbackParams = \array_merge(array($aOrV), $callbackParams);
+        if (\is_array($aOrV)) {
             if (!$opts['depth']) {
                 // check if we need to be on the look out for self-reference loop
-                $str = print_r($a_or_v, true);
-                // $this->isRecursive = $this->debug->isRecursive($a_or_v);
-                self::$isRecursive = strpos($str, '*RECURSION*') !== false;
+                $str = \print_r($aOrV, true);
+                // $this->isRecursive = $this->debug->isRecursive($aOrV);
+                self::$isRecursive = \strpos($str, '*RECURSION*') !== false;
             }
             $opts['depth']++;
-            if (in_array($opts['callback_expects'], array('array','both'))) {
-                $a_or_v = call_user_func_array($function, $callback_params);
+            if (\in_array($opts['callback_expects'], array('array','both'))) {
+                $aOrV = \call_user_func_array($function, $callbackParams);
             }
-            $hist[] = $a_or_v;
-            foreach ($a_or_v as $k => $v) {
-                if (self::$isRecursive && in_array($v, $hist)) {
+            $hist[] = $aOrV;
+            foreach ($aOrV as $k => $v) {
+                if (self::$isRecursive && \in_array($v, $hist)) {
                     continue;   // recursion
                 }
                 // if (!$this->isRecursive || !$this->debug->isRecursive($v, $k)) {
                 // }
-                $a_or_v[$k] = self::mapDeep($function, $v, $params, $opts, $hist);
+                $aOrV[$k] = self::mapDeep($function, $v, $params, $opts, $hist);
             }
-        } elseif (is_resource($a_or_v) && !$opts['resource']) {
-            #$this->debug->log('resource encountered', $a_or_v);
-        } elseif (in_array($opts['callback_expects'], array('scalar','both'))) {
-            $a_or_v = call_user_func_array($function, $callback_params);
+        } elseif (\is_resource($aOrV) && !$opts['resource']) {
+        } elseif (\in_array($opts['callback_expects'], array('scalar','both'))) {
+            $aOrV = \call_user_func_array($function, $callbackParams);
         }
-        return $a_or_v;
+        return $aOrV;
     }
 
     /**
@@ -349,7 +345,7 @@ class ArrayUtil
     public static function mergeDeep($aDefault, $a2, $opts = array())
     {
         if (empty($opts['prepped'])) {
-            $opts = array_merge(array(
+            $opts = \array_merge(array(
                 'empty_overwrites'  => true,
                 'int_keys'          => 'unique',    // overwrite (or replace) | unique | append
                                                     // unique & append reindex!
@@ -361,21 +357,21 @@ class ArrayUtil
             $aDefault = $opts['empty_overwrites']
                 ? $a2
                 : $aDefault;
-        } elseif (!is_array($aDefault) || !is_array($a2)) {
+        } elseif (!\is_array($aDefault) || !\is_array($a2)) {
             $aDefault = $a2;
         } else {
             foreach ($a2 as $k2 => $v2) {
-                if (is_int($k2) && $opts['int_keys'] == 'unique') {
-                    if (!in_array($v2, $aDefault)) {
+                if (\is_int($k2) && $opts['int_keys'] == 'unique') {
+                    if (!\in_array($v2, $aDefault)) {
                         #$this->debug->log('int_key & val does not already exist');
                         $aDefault[] = $v2;
                     }
-                } elseif (is_int($k2) && $opts['int_keys'] == 'append') {
+                } elseif (\is_int($k2) && $opts['int_keys'] == 'append') {
                     $aDefault[] = $v2;
                 } else {
                     if (!isset($aDefault[$k2])) {
                         $aDefault[$k2] = $v2;
-                    } elseif ($opts['empty_overwrites'] && !is_array($v2)) {    // null gets overwritten
+                    } elseif ($opts['empty_overwrites'] && !\is_array($v2)) {    // null gets overwritten
                         $aDefault[$k2] = $v2;
                     } else {
                         $aDefault[$k2] = self::mergeDeep($aDefault[$k2], $v2, $opts);
@@ -396,12 +392,12 @@ class ArrayUtil
     /*
     public static function mergeDeep2(...$arrays)
     {
-        $merged = array_shift($arrays);
+        $merged = \array_shift($arrays);
         while ($arrays) {
-            $array = array_shift($arrays);
+            $array = \array_shift($arrays);
             foreach ($array as $key => $value) {
-                if (is_string($key)) {
-                    if (is_array($value) && isset($merged[$key]) && is_array($merged[$key])) {
+                if (\is_string($key)) {
+                    if (\is_array($value) && isset($merged[$key]) && \is_array($merged[$key])) {
                         $merged[$key] = self::mergeDeep2($merged[$key], $value);
                     } else {
                         $merged[$key] = $value;
@@ -425,19 +421,19 @@ class ArrayUtil
      */
     public static function objToArray($var, $lowerCaseKeys = true)
     {
-        if (is_object($var)) {
-            $var = get_object_vars($var);
+        if (\is_object($var)) {
+            $var = \get_object_vars($var);
         }
-        if (is_array($var)) {
+        if (\is_array($var)) {
             if ($lowerCaseKeys) {
-                $var = array_change_key_case($var);
+                $var = \array_change_key_case($var);
             }
             foreach ($var as $k => $v) {
                 $var[$k] = self::objToArray($v, $lowerCaseKeys);
             }
         }
-        if (is_string($var)) {
-            $var = trim($var);
+        if (\is_string($var)) {
+            $var = \trim($var);
         }
         return $var;
     }
@@ -530,9 +526,9 @@ class ArrayUtil
     public static function removeVal(&$haystack, $needle, $strict = true)
     {
         $count = 0;
-        if (is_array($haystack)) {
+        if (\is_array($haystack)) {
             // PHP 4 doesn't have 3rd array_keys() param -> perform strict check in loop
-            $keys = array_keys($haystack, $needle);
+            $keys = \array_keys($haystack, $needle);
             foreach ($keys as $k) {
                 if ($strict && $haystack[$k] !== $needle) {
                     continue;
@@ -555,11 +551,11 @@ class ArrayUtil
      */
     public static function searchFields($array, $values, $opts = array())
     {
-        if (!is_array($array)) {
+        if (!\is_array($array)) {
             $array = array($array);
         }
-        if (!is_array($opts)) {
-            if (is_bool($opts)) {
+        if (!\is_array($opts)) {
+            if (\is_bool($opts)) {
                 $opts = array(
                     'whole' => $opts,
                     'case'  => $opts,
@@ -568,46 +564,61 @@ class ArrayUtil
                 $opts = array();
             }
         }
-        $opts = array_merge(array(
+        $opts = \array_merge(array(
             'whole' => false,
             'case' => false,
+            'first' => false,
         ), $opts);
-        foreach ($values as $colname => $search_value) {
-            if ($search_value === null || $search_value === '') {
+        /*
+            clean up search values
+        */
+        foreach ($values as $colname => $searchValue) {
+            if ($searchValue === null || $searchValue === '') {
                 unset($values[$colname]);
-            } elseif (is_array($search_value)) {
-                $values[$colname] = array_shift($search_value);
+                continue;
+            }
+            if (\is_array($searchValue)) {
+                $searchValue = \array_shift($searchValue);
+                $values[$colname] = $searchValue;
+            }
+            if (\is_string($searchValue)) {
+                if (!$opts['case']) {
+                    $searchValue = \strtolower($searchValue);
+                }
+                $values[$colname] = \trim($searchValue);
             }
         }
-        foreach ($values as $colname => $search_value) {
-            #$this->debug->log($colname.' = '.$search_value);
-            if (is_string($search_value)) {
-                if (!$opts['case']) {
-                    $search_value = strtolower($search_value);
-                }
-                $search_value = trim($search_value);
-            }
-            foreach ($array as $key => $row) {
-                $col_value = isset($row[$colname])
+        foreach ($array as $key => $row) {
+            $match = true;
+            foreach ($values as $colname => $searchValue) {
+                $colValue = isset($row[$colname])
                     ? $row[$colname]
                     : null;
-                if (is_string($col_value)) {
+                if (\is_string($colValue)) {
                     if (!$opts['case']) {
-                        $col_value = strtolower($col_value);
+                        $colValue = \strtolower($colValue);
                     }
-                    $col_value = trim($col_value);
+                    $colValue = \trim($colValue);
                 }
-                if (is_bool($search_value)) {
-                    $found = $col_value == $search_value;
+                if (\is_bool($searchValue)) {
+                    $found = $colValue == $searchValue;
                 } elseif ($opts['whole']) {
-                    $found = $col_value == $search_value;
+                    $found = $colValue == $searchValue;
                 } else {
-                    $found = strpos($col_value, (string) $search_value) !== false;
+                    $found = \strpos($colValue, (string) $searchValue) !== false;
                 }
                 if (!$found) {
+                    $match = false;
                     unset($array[$key]);
+                    continue;
                 }
             }
+            if ($match && $opts['first']) {
+                return $row;
+            }
+        }
+        if ($opts['first']) {
+            return false;
         }
         return $array;
     }
@@ -625,23 +636,24 @@ class ArrayUtil
     public static function searchKey($array, $needle)
     {
         $return = false;
-        if (!is_array($array)) {
+        if (!\is_array($array)) {
             $array = array();
         }
-        $array_keys = array();
+        $arrayKeys = array();
         foreach ($array as $k => $v) {
             if ($k == $needle) {
                 $return = $v;
                 break;
             }
-            if (is_array($v)) {
+            if (\is_array($v)) {
                 // don't search deeper levels until finished with this level
-                $array_keys[] = $k;
+                $arrayKeys[] = $k;
             }
         }
         if ($return === false) {
-            foreach ($array_keys as $k) {
-                if (($result = self::searchKey($array[$k], $needle)) !== false) {
+            foreach ($arrayKeys as $k) {
+                $result = self::searchKey($array[$k], $needle);
+                if ($result !== false) {
                     $return = $result;
                     break;
                 }
@@ -653,54 +665,50 @@ class ArrayUtil
     /**
      * returns all the unique values for columns (fields)
      *
-     * @param array        $array       array
-     * @param array|string $cols_to_get columns desired
-     * @param boolean      $assoc       when only returning one col, should each row be an assoc/hash array?
+     * @param array        $array     array
+     * @param array|string $colsToGet columns desired
+     * @param boolean      $assoc     when only returning one col, should each row be an assoc/hash array?
      *
      * @return array
      */
-    public static function uniqueCol($array, $cols_to_get, $assoc = true)
+    public static function uniqueCol($array, $colsToGet, $assoc = true)
     {
-        if (!is_array($array)) {
+        if (!\is_array($array)) {
             $array = array();
         }
-        if (!is_array($cols_to_get)) {
-            $cols_to_get = array($cols_to_get);
+        if (!\is_array($colsToGet)) {
+            $colsToGet = array($colsToGet);
         }
-        $col_values_temp    = array();
-        $col_values_strings = array();
-        $col_values  = array();
-        foreach (array_keys($array) as $i) {
-            $line_values = array();
-            foreach ($cols_to_get as $colname) {
+        $colValuesTemp    = array();
+        $colValuesStrings = array();
+        $colValues = array();
+        foreach (\array_keys($array) as $i) {
+            $lineValues = array();
+            foreach ($colsToGet as $colname) {
                 if (isset($array[$i][$colname])) {
-                    $line_values[$colname] = $array[$i][$colname];
+                    $lineValues[$colname] = $array[$i][$colname];
                 }
             }
-            if (!empty($line_values)) {
-                $line_string = implode('', array_values($line_values));
-                array_push($col_values_temp, $line_values);
-                array_push($col_values_strings, $line_string);
+            if (!empty($lineValues)) {
+                $lineString = \implode('', \array_values($lineValues));
+                \array_push($colValuesTemp, $lineValues);
+                \array_push($colValuesStrings, $lineString);
             }
         }
-        #$this->debug->log('col_values_temp', $col_values_temp);
-        #$this->debug->log('col_values_strings', $col_values_strings);
-        #$this->debug->log('col_values', $col_values);
-        $keys = array_keys(array_unique($col_values_strings));      // $keys are the line-#s
+        $keys = \array_keys(\array_unique($colValuesStrings));      // $keys are the line-#s
         foreach ($keys as $key) {
-            array_push($col_values, $col_values_temp[$key]);
+            \array_push($colValues, $colValuesTemp[$key]);
         }
-        if (count($cols_to_get) == 1) {
-            sort($col_values);
+        if (\count($colsToGet) == 1) {
+            \sort($colValues);
             if (!$assoc) {
-                foreach ($col_values as $i => $a) {
-                    $col_values[$i] = $a[ $cols_to_get[0] ];
+                foreach ($colValues as $i => $a) {
+                    $colValues[$i] = $a[ $colsToGet[0] ];
                 }
             }
         } else {
-            $col_values = self::fieldSort($col_values, $cols_to_get);
+            $colValues = self::fieldSort($colValues, $colsToGet);
         }
-        #$this->debug->log($col_values, 'col_values');
-        return $col_values;
+        return $colValues;
     }
 }
