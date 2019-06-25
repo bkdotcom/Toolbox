@@ -297,13 +297,13 @@ class DateTimeUtilTest extends \PHPUnit\Framework\TestCase
             array(
                 // earlier in year
                 'params' => array(
-                    new \DateTime('2018-02-15 00:00:00'),
-                    new \DateTime('2018-07-04 21:15:00')
+                    new \DateTime(\date('Y').'-02-15 00:00:00'),
+                    new \DateTime(\date('Y').'-07-04 21:15:00')
                 ),
                 'expect' => 'February 15th',
             ),
             array(
-                // last year
+                // prev year
                 'params' => array(
                     new \DateTime('2017-12-22 12:00:00'),
                     new \DateTime('2018-01-01 05:59:00')
