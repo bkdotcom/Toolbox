@@ -117,7 +117,7 @@ class Cookie extends Config
 
 	public static function remove($name)
 	{
-		return $this->set(array(
+		return self::set(array(
 			'name' => $name,
 			'expiry' => -3600*24,
 		));
@@ -229,8 +229,8 @@ class Cookie extends Config
 		$paramsDefault = array(
 			// 'name'		=> 'vars',
 			'value'		=> '',
-			// 'lifetime'	=> null,				// can pass lifetime in lieu of expiry (ala session_set_cookie_params)
-												//		lifetime param takes precedence
+			// 'lifetime'	=> null,       // can pass lifetime in lieu of expiry (ala session_set_cookie_params)
+											//		lifetime param takes precedence
 			'domain'	=> preg_match($domainRegex, $_SERVER['HTTP_HOST'], $matches)
 						? '.'.$matches[1]
 						: '',

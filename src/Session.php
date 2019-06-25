@@ -14,6 +14,10 @@ use ArrayIterator;
 class Session implements \ArrayAccess, \Countable, \IteratorAggregate
 {
 
+    protected $cfg = array(
+        'collectionName' => null,
+    );
+
     protected static $cfgStatic = array(
         'cookieLifetime'=> 0,                   // TTL (seconds) 0 = expire when close browser
         'cookiePath'    => '/',
@@ -24,7 +28,7 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
         'id'            => null,                // session_id()...  typically ineffective when use_strict_mode
                                                 //     we'll disable use_strict_mode
         'regenOnStart'  => false,               // regenerate session id after session_start
-        'useStrictMode' => true,
+        'useStrictMode' => true,                // do not accecpt unititialized session id
         'useCookies'    => true,
         'useOnlyCookies'=> true,
         /*
@@ -40,12 +44,11 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
         'savePath'      => '',                  // 'session.save_path' || sys_get_temp_dir()
     );
 
-    protected static $cfgExplicitlySet = array();
+    protected static $cfgExplicitlySet = array();   // make sure we don't overwrite cfg with defaults
 
     protected static $status = array(
         'requestId' => null,
         'regenerated' => false,
-        'cfgInitialized' => false,
     );
 
     private static $instance;
@@ -61,65 +64,11 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
             // self::getInstance() will always return initial/first instance
             self::$instance = $this;
         }
-        self::setCfg($cfg);
-        // $this->setPublicMethods();
+        $this->setCfg($cfg);
         if (\ini_get('session.save_handler') == 'files') {
             \bdk\Debug::_info('session savePath', self::$cfgStatic['savePath']);
         }
     }
-
-    /**
-     * Magic method to allow us to call instance methods statically
-     *
-     * Prefix the instance method with an underscore ie
-     *    \bdk\Session::_get('keyToGet');
-     *
-     * @param string $methodName Inaccessible method name
-     * @param array  $args       Arguments passed to method
-     *
-     * @return mixed
-     */
-    /*
-    public static function __callStatic($methodName, $args)
-    {
-        $methodName = \ltrim($methodName, '_');
-        if (\in_array($methodName, self::$publicMethods)) {
-            $instance = self::getInstance();
-            return \call_user_func_array(array($instance, $methodName), $args);
-        }
-    }
-    */
-
-    /**
-     * Set configuration values
-     *
-     * @param array $cfg configuration key=>value
-     *
-     * @return void
-     * @see    http://php.net/manual/en/session.configuration.php
-     */
-    /*
-    public function cfg(array $cfg = array())
-    {
-        $this->cfgExplicitlySet = \array_merge($this->cfgExplicitlySet, $cfg);
-        if (empty($this->cfgDefault['savePath']) && \ini_get('session.save_handler') == 'files') {
-            $this->cfgDefault['savePath'] = \sys_get_temp_dir();
-        }
-        $this->cfg = \array_merge(
-            $this->cfgDefault,
-            array(
-                'name' => $this->cfgDefaultName(),
-            ),
-            // session_get_cookie_params(),
-            \array_intersect_key($this->cfg, $this->cfgExplicitlySet),   // toss any values that may have come via default
-            $cfg
-        );
-        $this->debug->info('session cookie lifetime', $this->cfg['cookieLifetime']);
-        $this->debug->info('session data lifetime', $this->cfg['gcMaxlifetime']);
-        $this->debug->log('cfg', $this->cfg);
-        $this->cfgApply();
-    }
-    */
 
     /**
      * Remove all items from collection
@@ -325,7 +274,19 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
         $_SESSION[$key] = $value;
     }
 
-    public static function setCfg($key, $value = null)
+    public function setCfg($key, $value = null)
+    {
+        if (\is_string($key)) {
+            $cfg = array();
+            ArrayUtil::path($cfg, $key, $value);
+        } elseif (\is_array($key)) {
+            $cfg = $key;
+        }
+        $this->cfg = \array_merge($this->cfg, \array_intersect_key($cfg, $this->cfg));
+        self::setCfgStatic(\array_intersect_key($cfg, self::$cfgStatic));
+    }
+
+    public static function setCfgStatic($key, $value = null)
     {
         if (\is_string($key)) {
             $cfg = array();
@@ -334,8 +295,8 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
             $cfg = $key;
         }
         self::$cfgExplicitlySet = \array_merge(self::$cfgExplicitlySet, $cfg);
-        self::$cfgStatic = \array_merge(self::$cfgStatic, self::cfgGetDefaults(), $cfg);
-        self::cfgApply();
+        self::$cfgStatic = \array_merge(self::$cfgStatic, self::cfgDefaults(), $cfg);
+        self::cfgApplyStatic();
     }
 
     /**
@@ -354,7 +315,7 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
         if (\headers_sent()) {
             return false;
         }
-        self::setCfg(array());  // makes sure all default's determined and set
+        self::setCfgStatic(array());  // makes sure all default's determined and set
         $success = \session_start();
         \bdk\Debug::_info('started', \session_id());
         if (self::$cfgStatic['regenOnStart']) {
@@ -370,6 +331,7 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
      */
     public static function startIf()
     {
+        self::setCfgStatic(array());
         if (self::$status['requestId']) {
             return self::start();
         } else {
@@ -382,7 +344,7 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
      *
      * @return void
      */
-    private static function cfgApply()
+    private static function cfgApplyStatic()
     {
         $iniMap = array(
             'gcMaxlifetime' => 'session.gc_maxlifetime',
@@ -412,42 +374,12 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
             \session_name(self::$cfgStatic['name']);
         }
         if (self::$cfgStatic['id']) {
-            \bdk\Debug::_log('setting useStrictMode to false (session_id passed)');
+            \bdk\Debug::_info('session_id passed : setting useStrictMode to false');
             \ini_set('session.use_strict_mode', false);
             \session_id(self::$cfgStatic['id']);
         } else {
             \ini_set('session.use_strict_mode', self::$cfgStatic['useStrictMode']);
         }
-    }
-
-    /**
-     * Get default config values
-     *
-     * @return array
-     */
-    private static function cfgGetDefaults()
-    {
-        if (self::$status['cfgInitialized']) {
-            return array();
-        }
-        $defaults = array(
-            'cacheExpire'   => \session_cache_expire(),  // int (minutes) session_cache_expire()
-                                                        //   only applies when cacheLimiter != 'nocache'
-            'cacheLimiter'  => \session_cache_limiter(), // session_cache_limiter()
-                                                        //   public | private_no_expire | private | nocache
-            'gcMaxlifetime' => (int) \ini_get('session.gc_maxlifetime'),
-            'gcProbability' => (int) \ini_get('session.gc_probability'),
-            'gcDivisor'     => (int) \ini_get('session.gc_divisor'),
-            'savePath'      => (string) \ini_get('session.save_path'),
-            'name'          => empty(self::$cfgExplicitlySet['name'])
-                                    ? self::cfgGetDefaultName()
-                                    : null, // meh, who cares
-        );
-        if (empty($defaults['savePath']) && \ini_get('session.save_handler') == 'files') {
-            $defaults['savePath'] = \sys_get_temp_dir();
-        }
-        self::$status['cfgInitialized'] = true;
-        return \array_diff_key($defaults, self::$cfgExplicitlySet);
     }
 
     /**
@@ -459,23 +391,21 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
      *
      * @return string
      */
-    private static function cfgGetDefaultName()
+    private static function cfgDefaultName()
     {
+        if (isset(self::$cfgExplicitlySet['name'])) {
+            return self::$cfgExplicitlySet['name'];
+        }
+        $cfg = \array_merge(self::$cfgStatic, self::$cfgExplicitlySet);
         $nameDefault = null;
         $sessionNamePref = array('SESSIONID', \session_name());
         foreach ($sessionNamePref as $nameTest) {
-            $useCookies = isset(self::$cfgExplicitlySet['useCookies'])
-                ? self::$cfgExplicitlySet['useCookies']
-                : self::$cfgStatic['useCookies'];
-            if ($useCookies && !empty($_COOKIE[$nameTest])) {
+            if ($cfg['useCookies'] && !empty($_COOKIE[$nameTest])) {
                 $nameDefault = $nameTest;
                 self::$status['requestId'] = $_COOKIE[$nameTest];
                 break;
             }
-            $useOnlyCookies = isset(self::$cfgExplicitlySet['useOnlyCookies'])
-                ? self::$cfgExplicitlySet['useOnlyCookies']
-                : self::$cfgStatic['useOnlyCookies'];
-            if (!$useOnlyCookies && !empty($_GET[$nameTest])) {
+            if (!$cfg['useOnlyCookies'] && !empty($_GET[$nameTest])) {
                 $nameDefault = $nameTest;
                 self::$status['requestId'] = $_GET[$nameTest];
                 break;
@@ -488,24 +418,32 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
     }
 
     /**
-     * Set/cache this class' public methods
+     * Get default config values
      *
-     * @return void
+     * Only returns values that haven't been explicitly set already
+     *
+     * @return array
      */
-    /*
-    private function setPublicMethods()
+    private static function cfgDefaults()
     {
-        $refObj = new ReflectionObject($this);
-        self::$publicMethods = \array_map(function (ReflectionMethod $refMethod) {
-            return $refMethod->name;
-        }, $refObj->getMethods(ReflectionMethod::IS_PUBLIC));
-        self::$publicMethods = \array_diff(self::$publicMethods, array(
-            '__construct',
-            '__callStatic',
-            '__get',
-        ));
+        $defaults = array(
+            'cacheExpire'   => \session_cache_expire(),     // int (minutes) session_cache_expire()
+                                                            //   only applies when cacheLimiter != 'nocache'
+            'cacheLimiter'  => \session_cache_limiter(),    // session_cache_limiter()
+                                                            //   public | private_no_expire | private | nocache
+            'gcMaxlifetime' => (int) \ini_get('session.gc_maxlifetime'),
+            'gcProbability' => (int) \ini_get('session.gc_probability'),
+            'gcDivisor'     => (int) \ini_get('session.gc_divisor'),
+            'savePath'      => \session_save_path() ?: \sys_get_temp_dir(),
+            'name'          => self::cfgDefaultName(),
+        );
+        /*
+        if (empty($defaults['savePath']) && \ini_get('session.save_handler') == 'files') {
+            $defaults['savePath'] = \sys_get_temp_dir();
+        }
+        */
+        return \array_diff_key($defaults, self::$cfgExplicitlySet);
     }
-    */
 
     /*
         ArrayAccess interface

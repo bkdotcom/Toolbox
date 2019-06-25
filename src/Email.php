@@ -255,7 +255,7 @@ class Email extends Config
             }
             $attachment['content_transfer_encoding'] = 'base64';
             $attachment['body'] = chunk_split(base64_encode($attachment['body']), 68, $eol);
-            $attachment['body'] = substr($a['body'], 0, -strlen($eol));  // remove final $eol
+            $attachment['body'] = substr($attachment['body'], 0, -strlen($eol));  // remove final $eol
             $attachment['file'] = null;
         }
         return $attachment;
@@ -464,7 +464,7 @@ class Email extends Config
         );
         $this->debug->log(
             'Email:<br />'
-            .'<pre style="margin-left:2em; padding:.25em; border:#999 solid 1px; background-color:#DDD; color:#000;">'
+            .'<pre style="margin-left:2em; padding:.25em; border:#999 solid 1px; background-color:#DDD; color:#000; white-space:pre;">'
             .$strDebug
             .'</pre>'
         );

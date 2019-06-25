@@ -326,31 +326,31 @@ class Image
 	/**
 	 * Convert a hexadecimal color code to its RGB equivalent
 	 *
-	 * @param string  $str_hex        hexadecimal color value
+	 * @param string  $strHex         hexadecimal color value
 	 * @param boolean $returnAsString if set true, returns the value separated by the separator character. Otherwise returns associative array
 	 * @param string  $seperator      to separate RGB values. Applicable only if second parameter is true.
 	 *
 	 * @return array or string (depending on second parameter. Returns false if invalid hex color value)
 	 */
-	public function hex2rgb($str_hex, $returnAsString = false, $seperator = ',')
+	public function hex2rgb($strHex, $returnAsString = false, $seperator = ',')
 	{
-		$str_hex = preg_replace("/[^0-9A-Fa-f]/", '', $str_hex); // Gets a proper hex string
+		$strHex = preg_replace("/[^0-9A-Fa-f]/", '', $strHex); // Gets a proper hex string
 		$rgbArray = array();
 		$return = false;
-		if (strlen($str_hex) == 6) {
+		if (strlen($strHex) == 6) {
 			// If a proper hex code, convert using bitwise operation. No overhead... faster
-			$colorVal = hexdec($str_hex);
+			$colorVal = hexdec($strHex);
 			$rgbArray = array(
 				'red'	=> 0xFF & ($colorVal >> 0x10),
 				'green'	=> 0xFF & ($colorVal >> 0x8),
 				'blue'	=> 0xFF & $colorVal,
 			);
-		} elseif (strlen($str_hex) == 3) {
+		} elseif (strlen($strHex) == 3) {
 			// if shorthand notation, need some string manipulations
 			$rgbArray = array(
-				'red'	=> hexdec(str_repeat(substr($str_hex, 0, 1), 2)),
-				'green'	=> hexdec(str_repeat(substr($str_hex, 1, 1), 2)),
-				'blue'	=> hexdec(str_repeat(substr($str_hex, 2, 1), 2)),
+				'red'	=> hexdec(str_repeat(substr($strHex, 0, 1), 2)),
+				'green'	=> hexdec(str_repeat(substr($strHex, 1, 1), 2)),
+				'blue'	=> hexdec(str_repeat(substr($strHex, 2, 1), 2)),
 			);
 		}
 		if (!empty($rgbArray)) {

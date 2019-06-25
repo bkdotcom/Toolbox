@@ -13,6 +13,7 @@ php:
 matrix:
   fast_finish: true
   allow_failures:
+    - php: hhvm-3.24
     - php: hhvm
     - php: hhvm-nightly
 install:
@@ -21,10 +22,7 @@ before_script:
   - |
     echo "TRAVIS_PHP_VERSION:" $TRAVIS_PHP_VERSION;
     php -v;
+    php -r 'echo PHP_VERSION;';
     if [ ${TRAVIS_PHP_VERSION:0:4} == "hhvm" ]; then
-      #hhvm -d hhvm.php7.all=1;
-      #curl -sSfL -o ~/.phpenv/versions/hhvm/bin/phpunit https://phar.phpunit.de/phpunit-7.0.phar;
       curl -sSfL -o ~/.phpenv/versions/hhvm/bin/phpunit https://phar.phpunit.de/phpunit-5.7.phar;
-    else
-      #curl -sSfL -o ~/.phpenv/versions/hhvm/bin/phpunit https://phar.phpunit.de/phpunit-5.7.phar;
     fi
