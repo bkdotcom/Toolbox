@@ -19,18 +19,18 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
     );
 
     protected static $cfgStatic = array(
-        'cookieLifetime'=> 0,                   // TTL (seconds) 0 = expire when close browser
+        'cookieLifetime' => 0,                   // TTL (seconds) 0 = expire when close browser
         'cookiePath'    => '/',
         'cookieDomain'  => null,
         'cookieSecure'  => false,
-        'cookieHttponly'=> false,
+        'cookieHttponly' => false,
         'name'          => null,
         'id'            => null,                // session_id()...  typically ineffective when use_strict_mode
                                                 //     we'll disable use_strict_mode
         'regenOnStart'  => false,               // regenerate session id after session_start
         'useStrictMode' => true,                // do not accecpt unititialized session id
         'useCookies'    => true,
-        'useOnlyCookies'=> true,
+        'useOnlyCookies' => true,
         /*
             These options get their default from default php setting
         */
@@ -91,7 +91,7 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
      */
     public static function destroy()
     {
-        if (\session_status() !== PHP_SESSION_ACTIVE) {
+        if (self::isActive() === false) {
             return false;
         }
         foreach (\array_keys($_SESSION) as $key) {
@@ -110,7 +110,7 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
         \setcookie(
             self::$cfgStatic['name'],
             '',
-            \time()-60*60*24,
+            \time() - 60 * 60 * 24,
             self::$cfgStatic['cookiePath'],
             self::$cfgStatic['cookieDomain'],
             self::$cfgStatic['cookieSecure'],
@@ -124,7 +124,7 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
      *
      * @return integer number of deleted sessions
      */
-    public static function gc()
+    public static function garbageCollect()
     {
         if (\version_compare(PHP_VERSION, '7.0.0', '>=')) {
             return \session_gc();
@@ -215,6 +215,16 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
     }
 
     /**
+     * Check if session is active
+     *
+     * @return boolean
+     */
+    public static function isActive()
+    {
+        return \session_status() === PHP_SESSION_ACTIVE;
+    }
+
+    /**
      * Assign new session id
      *
      * @param boolean $delOldSession invalidate existing id?
@@ -232,11 +242,11 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
             // no session id was passed... there's no need to regenerate!
             return false;
         }
-        if (\session_status() === PHP_SESSION_NONE) {
+        $status = \session_status();
+        if ($status === PHP_SESSION_NONE) {
             // there's currently not a session
             self::$cfgStatic['regenOnStart'] = true;
-        }
-        if (\session_status() === PHP_SESSION_ACTIVE) {
+        } elseif ($status === PHP_SESSION_ACTIVE) {
             $success = \session_regenerate_id($delOldSession);
             self::$cfgStatic['regenOnStart'] = false;
             self::$status['regenerated'] = true;
@@ -274,6 +284,14 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
         $_SESSION[$key] = $value;
     }
 
+    /**
+     * [setCfg description]
+     *
+     * @param string $key   name/key
+     * @param mixed  $value value
+     *
+     * @return void
+     */
     public function setCfg($key, $value = null)
     {
         if (\is_string($key)) {
@@ -286,8 +304,20 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
         self::setCfgStatic(\array_intersect_key($cfg, self::$cfgStatic));
     }
 
+    /**
+     * [setCfgStatic description]
+     *
+     * @param string $key   name/key
+     * @param mixed  $value value
+     *
+     * @return void
+     */
     public static function setCfgStatic($key, $value = null)
     {
+        if (self::isActive()) {
+            \bdk\Debug::_warn('A session is active: unable modify session settings!');
+            return;
+        }
         if (\is_string($key)) {
             $cfg = array();
             ArrayUtil::path($cfg, $key, $value);
@@ -309,7 +339,8 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
         /*
             session_id() will continue to return id even after session_write_close()
         */
-        if (\session_status() === PHP_SESSION_ACTIVE) {
+        Debug::_log(__METHOD__);
+        if (self::isActive()) {
             return true;
         }
         if (\headers_sent()) {
@@ -332,11 +363,10 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
     public static function startIf()
     {
         self::setCfgStatic(array());
-        if (self::$status['requestId']) {
+        if (self::$status['requestId'] && self::isActive() === false) {
             return self::start();
-        } else {
-            return false;
         }
+        return false;
     }
 
     /**
@@ -347,12 +377,12 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
     private static function cfgApplyStatic()
     {
         $iniMap = array(
-            'gcMaxlifetime' => 'session.gc_maxlifetime',
-            'gcProbability' => 'session.gc_probability',
-            'gcDivisor'     => 'session.gc_divisor',
-            'savePath'      => 'session.save_path',
-            'useCookies'    => 'session.use_cookies',
-            'useOnlyCookies'=> 'session.use_only_cookies',
+            'gcMaxlifetime'  => 'session.gc_maxlifetime',
+            'gcProbability'  => 'session.gc_probability',
+            'gcDivisor'      => 'session.gc_divisor',
+            'savePath'       => 'session.save_path',
+            'useCookies'     => 'session.use_cookies',
+            'useOnlyCookies' => 'session.use_only_cookies',
         );
         foreach ($iniMap as $cfgKey => $iniKey) {
             \ini_set($iniKey, self::$cfgStatic[$cfgKey]);
@@ -393,12 +423,13 @@ class Session implements \ArrayAccess, \Countable, \IteratorAggregate
      */
     private static function cfgDefaultName()
     {
-        if (isset(self::$cfgExplicitlySet['name'])) {
-            return self::$cfgExplicitlySet['name'];
-        }
-        $cfg = \array_merge(self::$cfgStatic, self::$cfgExplicitlySet);
         $nameDefault = null;
         $sessionNamePref = array('SESSIONID', \session_name());
+        if (isset(self::$cfgExplicitlySet['name'])) {
+            $nameDefault = self::$cfgExplicitlySet['name'];
+            $sessionNamePref = array($nameDefault);
+        }
+        $cfg = \array_merge(self::$cfgStatic, self::$cfgExplicitlySet);
         foreach ($sessionNamePref as $nameTest) {
             if ($cfg['useCookies'] && !empty($_COOKIE[$nameTest])) {
                 $nameDefault = $nameTest;

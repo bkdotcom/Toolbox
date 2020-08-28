@@ -2,6 +2,8 @@
 
 namespace bdk;
 
+use bdk\Debug\Utility\Utf8;
+
 /**
  * String methods
  */
@@ -28,8 +30,8 @@ class Str
 		$count = 0;
 		$expEncArr = \explode($enclose, $str);
 		foreach ($expEncArr as $EncItem) {
-			if ($count++%2) {
-				\array_push($resArr, \array_pop($resArr) . ($preserve?$enclose:'') . $EncItem.($preserve?$enclose:''));
+			if ($count++ % 2) {
+				\array_push($resArr, \array_pop($resArr) . ($preserve ? $enclose : '') . $EncItem . ($preserve ? $enclose : ''));
 			} else {
 				$expDelArr = \explode($delim, $EncItem);
 				\array_push($resArr, \array_pop($resArr) . \array_shift($expDelArr));
@@ -72,10 +74,10 @@ class Str
 		}
 		if (!$retInt) {
 			$units = array('B','kB','MB','GB','TB','PB');
-			$pow = \pow(1024, ($i=\floor(\log($size, 1024))));
+			$pow = \pow(1024, ($i = \floor(\log($size, 1024))));
 			$size = $pow == 0
 				? '0 B'
-				: \round($size/$pow, 2).' '.$units[$i];
+				: \round($size / $pow, 2) . ' ' . $units[$i];
 		} else {
 			$size = \round($size);
 		}
@@ -91,8 +93,7 @@ class Str
 	 */
 	public static function isBase64Encoded($str)
 	{
-		$debug = \bdk\Debug::getInstance();
-		return $debug->utilities->isBase64Encoded($str);
+		return \bdk\Debug\Utility::isBase64Encoded($str);
 	}
 
 	/**
@@ -109,22 +110,22 @@ class Str
 			'requireSchema' => true,
 		), $opts);
 		$urlRegEx = '@^'
-			.($opts['requireSchema']
+			. ($opts['requireSchema']
 				? 'https?://'
 				: '(https?://)?'
 				)
-			.'[-\w\.]+'		// hostname
-			.'(:\d+)?'		// port
+			. '[-\w\.]+'	// hostname
+			. '(:\d+)?'		// port
 			// .'(/([-\w/\.]*(\?\S+)?)?)?@';
-			.'('
-				.'/'
-				.'('
-					.'[-\w/\.,%:]*'	// path
-					.'(\?\S+)?'		// query
-					.'(#\S*)?'		// fragment/hash
-				.')?'
-			.')?'
-			.'$@';
+			. '('
+				. '/'
+				. '('
+					. '[-\w/\.,%:]*'   // path
+					. '(\?\S+)?'       // query
+					. '(#\S*)?'        // fragment/hash
+				. ')?'
+			. ')?'
+			. '$@';
 		return \preg_match($urlRegEx, $url) > 0;
 	}
 
@@ -137,9 +138,7 @@ class Str
 	 */
 	public static function isUtf8($str)
 	{
-		// $debug = \bdk\Debug::getInstance();
-		// return $debug->utilities->isUtf8($str);
-		return \bdk\Debug\Utf8::isUtf8($str);
+		return Utf8::isUtf8($str);
 	}
 
 	/**
@@ -164,7 +163,7 @@ class Str
 					$ext = 'rd';
 			}
 		}
-		return $num.$ext;
+		return $num . $ext;
 	}
 
 	/**
@@ -186,8 +185,9 @@ class Str
 			),
 			$opts
 		);
-		if (( $opts['conv_dot'] || \strpos($str, '.') === false )
-			&& ( $opts['conv_space'] || \strpos($str, ' ') === false )
+		if (
+            ($opts['conv_dot'] || \strpos($str, '.') === false)
+			&& ($opts['conv_space'] || \strpos($str, ' ') === false)
 		) {
 			// just use parse_str
 			\parse_str($str, $params);
@@ -259,7 +259,7 @@ class Str
 	public static function plural($count, $single, $plural = null)
 	{
 		if (\is_null($plural)) {
-			$plural = $single.'s';
+			$plural = $single . 's';
 		}
 		return $count == 1
 			? $single
@@ -280,7 +280,11 @@ class Str
 			$values = \func_get_args();
 			\array_shift($values);
 		}
-		self::$temp = $values;
+		self::$temp = array(
+            'count' => 0,
+            'tokensKeep' => array(),
+            'values' => $values,
+        );
 		// $regex = '/\\\\?[<\[](::|%)\s*(.*?)\s*\\1[>\]]/';
 		$regex = '@\\\\?(?:
         \{\{\s*(.*?)\s*\}\}|           # {{a}}
@@ -289,7 +293,12 @@ class Str
         # <!--::\s*+(.*?)\s*+::-->|    # <!--::a::-->
         # \/\*::\s*(.*?)\s*::\*\/      # /*::a::*/
         )@sx';
-		$return = \preg_replace_callback($regex, array(__CLASS__, 'quickTempCallback'), $template);
+        $return = $template;
+		do {
+            self::$temp['count'] = 0;
+            $return = \preg_replace_callback($regex, array(__CLASS__, 'quickTempCallback'), $return);
+        } while (self::$temp['count']);
+        $return = \strtr($return, self::$temp['tokensKeep']);
 		self::$temp = null;
 		return $return;
 	}
@@ -299,38 +308,43 @@ class Str
 	 *
 	 * @param string $matches preg_replace_callback's matches
 	 *
-	 * @return string
+	 * @return string`
 	 */
 	private static function quickTempCallback($matches)
 	{
-		for ($i=1, $count=\count($matches); $i<$count; $i++) {
+		for ($i = 1, $count = \count($matches); $i < $count; $i++) {
 			if (\strlen($matches[$i])) {
 				$key = $matches[$i];
 				break;
 			}
 		}
+        self::$temp['count'] ++;
 		$return = null;
-		if (\substr($matches[0], 0, 1) == '\\') {
-			$return = \ltrim($matches[0], '\\');
-		} elseif (\is_array(self::$temp)) {
+        if (\substr($matches[0], 0, 1) == '\\') {
+			// ie \{{token}}
+            // don't count this as a match / replacement
+            self::$temp['count'] --;
+            self::$temp['tokensKeep'][$matches[0]] = \ltrim($matches[0], '\\');
+            return $matches[0];
+		} elseif (\is_array(self::$temp['values'])) {
 			$arrayUtil = new ArrayUtil();
-			$return = $arrayUtil->path(self::$temp, $key);
-		} elseif (\is_object(self::$temp) && isset(self::$temp->$key)) {
-			$return = self::$temp->$key;
+			$return = $arrayUtil->path(self::$temp['values'], $key);
+		} elseif (\is_object(self::$temp['values']) && isset(self::$temp['values']->$key)) {
+			$return = self::$temp['values']->$key;
 		}
 		if ($return === null) {
 			#$this->debug->log('try lookup func');
 			$regex = '/^(\S+?)(?:'	// key
-					.'\((.+)\)|'	// (param1, ...)
-					.'\s+((?:[\'"\$]|array|true|false|null).*)$'	// params not inside parens
-				.')/s';
+					. '\((.+)\)|'	// (param1, ...)
+					. '\s+((?:[\'"\$]|array|true|false|null).*)$'	// params not inside parens
+				. ')/s';
 			if (\preg_match($regex, $key, $matches)) {
 				#$this->debug->log('func()');
 				$args = !empty($matches[2])
 					? $matches[2]
 					: $matches[3];
 				$key = $matches[1];
-				$parsed = @eval('$args = array('.$args.');');
+				$parsed = @eval('$args = array(' . $args . ');');
 				if ($parsed === false) {
 					// workaround for PHP "Bug" that sends a 500 response when an eval doesn't parse
 					$code = !empty($_SERVER['REDIRECT_STATUS'])
@@ -344,14 +358,12 @@ class Str
 				$key	= \array_shift($args);
 			}
 			#$this->debug->log('args', $args);
-			if (is_object(self::$temp) && method_exists(self::$temp, 'get'.\ucfirst($key))) {
-				$method = 'get'.\ucfirst($key);
+			if (\is_object(self::$temp['values']) && \method_exists(self::$temp['values'], 'get' . \ucfirst($key))) {
+				$method = 'get' . \ucfirst($key);
 				#$this->debug->info('method exists', $method);
-				$return = \call_user_func_array(array(self::$temp, $method), $args);
-			} elseif (\function_exists('get_'.$key) && !\in_array($key, array('class'))) {
-				$return = \call_user_func_array('get_'.$key, $args);
-			} else {
-				#$this->debug->warn('no method or get_ function');
+				$return = \call_user_func_array(array(self::$temp['values'], $method), $args);
+			} elseif (\function_exists('get_' . $key) && !\in_array($key, array('class'))) {
+				$return = \call_user_func_array('get_' . $key, $args);
 			}
 		}
 		#$this->debug->info('return', $return);
@@ -482,6 +494,6 @@ class Str
 			#$this->debug->warn('mbstring not installed - no conversion performed');
 		}
 		*/
-		return Debug\Utf8::toUtf8($str);
+		return Utf8::toUtf8($str);
 	}
 }

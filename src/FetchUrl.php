@@ -606,6 +606,12 @@ class FetchUrl extends Config
             if (\is_null($v) || \is_string($v) && empty($v)) {
                 unset($options[$k]);
             } elseif (\is_int($k)) {
+                /*
+                $this->debug->log(array(
+                    'k' => $k,
+                    'v' => $v,
+                ));
+                */
                 \curl_setopt($curl, $k, $v);
             }
         }
@@ -650,7 +656,7 @@ class FetchUrl extends Config
             }
         } else {
             $this->redirectHistory = array();
-            if ($headers && $headers['Return-Code'] != 200 && $follow) {
+            if ($headers && \in_array(\floor($headers['Return-Code'] / 100), array(4, 5)) && $follow) {
                 #$this->debug->log('fetchResponse', $this->fetchResponse);
                 $return = false;
             } else {

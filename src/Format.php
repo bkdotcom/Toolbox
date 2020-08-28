@@ -95,7 +95,7 @@ class Format
 
     public static function address($parts, $opts = array())
     {
-        return \bdk\Geo\Address::format($parts, $opts);
+        return Address::format($parts, $opts);
     }
 
 	/**
@@ -110,15 +110,15 @@ class Format
 	 */
 	public function mask($string, $repeat = true, $numShow = 4, $maskChar = 'x')
 	{
-		#$this->debug->log('func_start',__FUNCTION__);
+		// $this->debug->group(__METHOD__);
 		if (strlen($string) > $numShow) {
-			$string = ( $repeat
+			$string = ($repeat
 					? str_repeat($maskChar, strlen($string)-$numShow)
 					: $maskChar
 				)
 				.substr($string, -$numShow);
 		}
-		#$this->debug->groupEnd();
+		// $this->debug->groupEnd();
 		return $string;
 	}
 

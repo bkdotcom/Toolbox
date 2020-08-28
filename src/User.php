@@ -61,8 +61,9 @@ class User
     public function __construct($db, $cfg = array())
     {
         $this->debug = \bdk\Debug::getInstance();
+        $this->debug->group(__METHOD__);
         if (!\defined('PASSWORD_DEFAULT')) {
-            require_once __DIR__.'/functions_password_hash.php';
+            require_once __DIR__ . '/functions_password_hash.php';
         }
         $cfgDefault = array(
             'sessionPath' => 'user',
@@ -71,12 +72,12 @@ class User
                 // 'cost' => 12,
             ),
             'tokenLen'          => 32,
-            'maxIdle'           => 60*15,           // 15 min
+            'maxIdle'           => 60 * 15,             // 15 min
             'datetimeFormat'    => 'M j, Y, g:i a',
-            'emailTokenLifetime' => 60*60*8,        // 8 hours  // @todo
+            'emailTokenLifetime' => 60 * 60 * 8,        // 8 hours  // @todo
             'persistCookie' => array(
                 'name'      => 'persist_token',
-                'lifetime'  => 60*60*24*30, // 60 days
+                'lifetime'  => 60 * 60 * 24 * 30,       // 60 days
                 'httponly'  => true,
             ),
             'userForeignKeys' => array(
@@ -94,6 +95,7 @@ class User
         $this->resume();
         // $this->debug->log('user', $this->user);
         // $this->debug->info('auth', $this->auth);
+        $this->debug->groupEnd();
     }
 
     /**
@@ -155,11 +157,11 @@ class User
         $this->debug->groupCollapsed(__METHOD__, $authResponse);
         $return = false;
         $providerkey = $authResponse['auth']['uid'];
-        $query = 'SELECT * FROM `user_social` WHERE `providerkey` = '.$this->db->quoteValue($providerkey);
+        $query = 'SELECT * FROM `user_social` WHERE `providerkey` = ' . $this->db->quoteValue($providerkey);
         $users = $this->db->query($query)[0];
         if ($users) {
             $userid = $users[0]['userid'];
-            $this->log('login', $userid, array('provider'=>$authResponse['auth']['provider']));
+            $this->log('login', $userid, array('provider' => $authResponse['auth']['provider']));
             $return = $userid;
         }
         $this->debug->groupEnd();
@@ -197,7 +199,7 @@ class User
             if (isset($this->cfg['userForeignKeys'][$k])) {
                 $fka = $this->cfg['userForeignKeys'][$k];
                 $kNew = $fka['userCol'];
-                $vNew = Str::quickTemp('('.$fka['getValQuery'].')', array('value'=>$this->db->quoteValue($v)));
+                $vNew = Str::quickTemp('(' . $fka['getValQuery'] . ')', array('value' => $this->db->quoteValue($v)));
                 unset($vals[$k]);
                 $vals[$kNew] = $vNew;
                 $noQuoteCols[] = $kNew;
@@ -250,7 +252,7 @@ class User
                 : $tzServerString;
         }
         if (\is_int($datetime)) {
-            $datetime = '@'.$datetime;
+            $datetime = '@' . $datetime;
         }
         $this->debug->log('tz_server_string', $tzServerString);
         $tzServer  = new \DateTimeZone($tzServerString);
@@ -277,8 +279,8 @@ class User
             'localtime' => true,    // true: return formatted date/time string for user's timezone
         ), $opts);
         $valsDatetime = array('createdon','lastactivity','previousactivity');
-        if (\is_null($userid) || $userid == $this->userid) {
-            $this->debug->log('use current user');
+        if ($userid === null || $userid == $this->userid) {
+            $this->debug->log('use current user', $this->user);
             $user = $this->user;
         } else {
             $ignore = array( 'password' );
@@ -292,12 +294,12 @@ class User
                 }
             }
             $joins = !empty($joins)
-                ? ' '.\implode(' ', $joins)
+                ? ' ' . \implode(' ', $joins)
                 : '';
             $query = 'SELECT * FROM `user`'
-                .' LEFT JOIN `user_auth` USING (`userid`)'
-                .$joins
-                .' WHERE `user`.`userid` = '.$this->db->quoteValue($userid);
+                . ' LEFT JOIN `user_auth` USING (`userid`)'
+                . $joins
+                . ' WHERE `user`.`userid` = ' . $this->db->quoteValue($userid);
             $users = $this->db->query($query)[0];
             $this->debug->table($users, 'users');
             $user = $users[0];
@@ -306,7 +308,7 @@ class User
                     $user[$k] = \strtotime($user[$k]);
                 }
             }
-            $query = 'SELECT `right` FROM `user_rights` WHERE `userid` = '.$this->db->quoteValue($userid);
+            $query = 'SELECT `right` FROM `user_rights` WHERE `userid` = ' . $this->db->quoteValue($userid);
             $rights = $this->db->query($query)[0];
             foreach ($rights as $k => $a) {
                 $rights[$k] = $a['right'];
@@ -362,30 +364,30 @@ class User
             $where = array();
             $wherePr = array();
             if (!empty($vals['username'])) {
-                $wherePr[] = '`username` = '.$this->db->quoteValue($vals['username']);
+                $wherePr[] = '`username` = ' . $this->db->quoteValue($vals['username']);
                 unset($vals['username']);
             }
             if (!empty($vals['email'])) {
-                $wherePr[] = '`email` = '.$this->db->quoteValue($vals['email']);
+                $wherePr[] = '`email` = ' . $this->db->quoteValue($vals['email']);
                 unset($vals['email']);
             }
             if ($wherePr) {
-                $where[] = '( '.\implode(' OR ', $wherePr).' )';
+                $where[] = '( ' . \implode(' OR ', $wherePr) . ' )';
             }
             foreach ($vals as $k => $v) {
-                $col = '`'.$k.'`';
-                if ($k == 'userid') {
-                    $col = '`user`.'.$col;
+                $col = '`' . $k . '`';
+                if ($k === 'userid') {
+                    $col = '`user`.' . $col;
                 }
-                $where[] = $col.' = '.$this->db->quoteValue($v);
+                $where[] = $col . ' = ' . $this->db->quoteValue($v);
             }
             $where = !empty($where)
-                ? ' WHERE '.\implode(' AND ', $where)
+                ? ' WHERE ' . \implode(' AND ', $where)
                 : '';
             $query = 'SELECT * FROM `user`'
-                .' LEFT JOIN `user_auth` USING (`userid`)'
+                . ' LEFT JOIN `user_auth` USING (`userid`)'
                 // .' LEFT JOIN `specialties` USING (`specialtyid`)'
-                .$where;
+                . $where;
             $return = $this->db->query($query)[0];
         }
         $this->debug->table($return, 'return');
@@ -406,13 +408,13 @@ class User
         Session::start();
         $user = $this->get($userid);
         // initialize session array
-        ArrayUtil::path($_SESSION, $this->cfg['sessionPath'], array());
         // create link to session array
         // $this->user = &ArrayUtil::path($_SESSION, $this->cfg['sessionPath']);
         $path = $this->cfg['sessionPath'];
         if (!\is_array($path)) {
             $path = \array_filter(\preg_split('#[\./]#', $path), 'strlen');
         }
+        ArrayUtil::path($_SESSION, $path, array());
         $this->user =& $_SESSION;
         foreach ($path as $k) {
             if (!isset($this->user[$k])) {
@@ -424,7 +426,8 @@ class User
         $this->user = $user;
         $this->user['_ts_cur'] = \time();
         $this->userid = $this->user['userid'];
-        $this->update(array('lastactivity'=>'NOW()'));
+        $this->update(array('lastactivity' => 'NOW()'));
+        $this->debug->info('$_SESSION', $_SESSION);
         $this->debug->groupEnd();
         return;
     }
@@ -502,7 +505,7 @@ class User
                 if (isset($this->user['username']) && $this->user['username'] === $vals['username']) {
                     $userid = $this->userid;
                 } else {
-                    $users = $this->search(array('username'=>$vals['username']));
+                    $users = $this->search(array('username' => $vals['username']));
                     if ($users) {
                         $userid = $users[0]['userid'];
                     }
@@ -559,7 +562,7 @@ class User
         }
         $where = implode(' AND ', $where);
         */
-        $found = $this->db->query('SELECT * FROM `user_social` '.$this->db->buildWhere($where))[0];
+        $found = $this->db->query('SELECT * FROM `user_social` ' . $this->db->buildWhere($where))[0];
         if ($found) {
             $this->socialUnlink($found[0]['provider'], $found[0]['providerkey']);
         }
@@ -635,7 +638,7 @@ class User
                 if (isset($this->cfg['userForeignKeys'][$k])) {
                     $fka = $this->cfg['userForeignKeys'][$k];
                     $kNew = $fka['userCol'];
-                    $vNew = Str::quickTemp('('.$fka['getValQuery'].')', array('value'=>$this->db->quoteValue($v)));
+                    $vNew = Str::quickTemp('(' . $fka['getValQuery'] . ')', array('value' => $this->db->quoteValue($v)));
                     unset($vals[$k]);
                     $vals[$kNew] = $vNew;
                     $noQuoteCols[] = $kNew;
@@ -818,7 +821,7 @@ class User
                 $this->debug->log('lastactivity', $this->user['lastactivity']);
                 $this->auth = 0;
             } else {
-                $this->update(array('lastactivity'=>'NOW()'));
+                $this->update(array('lastactivity' => 'NOW()'));
             }
         }
         /*
@@ -859,7 +862,6 @@ class User
     private function verifyPassword($pwClear, $pwHash)
     {
         $this->debug->groupCollapsed(__METHOD__);
-        $return = false;
         $hashAlgo = $this->cfg['passwordHashAlgo'];
         $hashOpts = $this->cfg['passwordHashOptions'];
         $success = \password_verify($pwClear, $pwHash);

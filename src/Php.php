@@ -27,7 +27,7 @@ class Php extends Config
     {
         self::normalizeServerVar();
         $debug = Debug::getInstance();
-        $hasLog = $debug->internal->hasLog();
+        $hasLog = $debug->hasLog();
         $collectWas = $debug->setCfg('collect', true);
         self::setCfg($cfg);
         self::checkSettings();
@@ -146,12 +146,12 @@ class Php extends Config
      */
     public static function getCallerInfo($retInfo = true, $offset = 0)
     {
-        $offset ++;
-        $info = \bdk\Debug\Utilities::getCallerInfo($offset);
+        $offset++;
+        $info = \bdk\Backtrace::getCallerInfo($offset);
         if ($retInfo) {
             return $info;
         }
-        return ($info['class'] ? $info['class'].'::' : '').$info['function'];
+        return ($info['class'] ? $info['class'] . '::' : '') . $info['function'];
     }
 
     /**
@@ -161,7 +161,7 @@ class Php extends Config
      */
     public static function getInterface()
     {
-        return Debug\Utilities::getInterface();
+        return Debug\Utility::getInterface();
     }
 
     /**

@@ -22,7 +22,7 @@ if (!function_exists('apache_request_headers')) {
      */
     function apache_request_headers()
     {
-        return \bdk\Debug\Utilities::getAllHeaders();
+        return \bdk\Debug\Utility::getAllHeaders();
     }
 }
 
@@ -34,6 +34,6 @@ if (!function_exists('getallheaders')) {
      */
     function getallheaders()
     {
-        return \bdk\Debug\Utilities::getAllHeaders();
+        return \bdk\Debug\Utility::getAllHeaders();
     }
 }

@@ -457,21 +457,21 @@ class ArrayUtil
     /**
      * Get value from array
      *
-     * @param array|string $path  key path
      * @param array        $array array to navigate
+     * @param array|string $path  key path
      *
      * @return mixed
      */
     public static function pathGet($array, $path)
     {
-        return \bdk\Debug\Utilities::arrayPathGet($array, $path);
+        return \bdk\Debug\Utility::arrayPathGet($array, $path);
     }
 
     /**
      * Set array value
      *
-     * @param array|string $path  key path
      * @param array        $array array to navigate
+     * @param array|string $path  key path
      * @param mixed        $value new value
      *
      * @return mixed previous value

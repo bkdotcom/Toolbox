@@ -32,7 +32,7 @@ class Xml
 	public static function toArray($xml, $opts = array(), $path = array())
 	{
 		$debug = \bdk\Debug::getInstance();
-		$debug->groupCollapsed(__CLASS__.'->'.__FUNCTION__, implode('/', $path));
+		$debug->groupCollapsed(__CLASS__ . '->' . __FUNCTION__, \implode('/', $path));
 		if (empty($opts['prepped'])) {
 			$optsDefault = array(
 				'attribs'		=> true,	// collect attributes?
@@ -47,12 +47,12 @@ class Xml
 				$optsDefault['empty_props'] = false;
 				$optsDefault['lower_keys'] = true;
 			}
-			$opts = array_merge($optsDefault, $opts);
+			$opts = \array_merge($optsDefault, $opts);
 			$opts['prepped'] = true;
 		}
-		if (is_string($xml)) {
+		if (\is_string($xml)) {
 			$xmlReader = new \XMLReader();
-			if (!strpos($xml, "\n") && strpos($xml, '<') === false) {
+			if (!\strpos($xml, "\n") && \strpos($xml, '<') === false) {
 				$debug->log('xml is a file or url');
 				$xmlReader->open($xml);
 			} else {
@@ -61,8 +61,8 @@ class Xml
 			$xml = $xmlReader;
 		}
 		$tree = array();
-		if (!is_object($xml)) {
-			trigger_error('xml is a non-object');
+		if (!\is_object($xml)) {
+			\trigger_error('xml is a non-object');
 			$debug->log('xml', $xml);
 			$tree = false;
 		} else {
@@ -81,11 +81,11 @@ class Xml
 						'nodes'		=> array(),
 					);
 					if ($opts['collapse'] && $node['tag'] == 'text') {
-						$node['tag'] = '_'.$node['tag'];
+						$node['tag'] = '_' . $node['tag'];
 					}
 					if ($opts['lower_keys']) {
-						$node['tag']	= strtolower($node['tag']);
-						$node['prefix'] = strtolower($node['prefix']);
+						$node['tag']	= \strtolower($node['tag']);
+						$node['prefix'] = \strtolower($node['prefix']);
 					}
 					$is_empty = $xml->isEmptyElement;
 					if ($opts['attribs'] && $xml->hasAttributes) {
@@ -93,14 +93,14 @@ class Xml
 							if ($opts['attribs_array']) {
 								$node['attribs'][$xml->name] = $xml->value;
 							} else {
-								$node['_'.$xml->name] = $xml->value;
+								$node['_' . $xml->name] = $xml->value;
 							}
 						}
 					}
 					$node['nodes'] = !$is_empty
 						? self::toArray($xml, $opts, $pathCurrent)
 						: array();
-					if (count($node['nodes']) == 1 && isset($node['nodes'][0]) && count($node['nodes'][0]) == 1) {
+					if (\count($node['nodes']) == 1 && isset($node['nodes'][0]) && \count($node['nodes'][0]) == 1) {
 						$node['text'] = $node['nodes'][0]['text'];
 						$node['nodes'] = array();
 					}
@@ -109,11 +109,11 @@ class Xml
 							unset($node['text']);
 						}
 						foreach ($node as $k => $v) {
-							if ($k != 'text' && ( $v === '' || $v === array() )) {
+							if ($k != 'text' && ($v === '' || $v === array())) {
 								unset($node[$k]);
 							}
 						}
-						if (array_keys($node) == array('tag')) {
+						if (\array_keys($node) == array('tag')) {
 							$node = array();
 						}
 					} elseif (empty($node['prefix'])) {
@@ -123,18 +123,18 @@ class Xml
 						$name = $node['tag'];
 						if ($opts['collapse'] && !empty($node['prefix'])) {
 							// $debug->warn('prefix + collapse');
-							$name = $node['prefix'].':'.$name;
+							$name = $node['prefix'] . ':' . $name;
 						}
 						if (!isset($tree[$name])) {
 							$tree[$name] = array();
 						}
 						unset($node['tag']);
-						if (!is_array($tree[$name])) {
+						if (!\is_array($tree[$name])) {
 							$tree[$name] = array ( $tree[$name] );
 						}
 						$tree[$name][] = $node;
 						if ($opts['collapse']) {
-							array_pop($tree[$name]);
+							\array_pop($tree[$name]);
 							if (empty($tree[$name])) {
 								unset($tree[$name]);
 							}
@@ -148,14 +148,14 @@ class Xml
 								}
 								unset($node['nodes']);
 							} elseif (isset($node['text'])) {
-								if (count($node) == 1) {
+								if (\count($node) == 1) {
 									$node = $node['text'];
 								}
 							} elseif (empty($node)) {
 								$node = '';
 							}
 							if (isset($tree[$name])) {
-								if (!is_array($tree[$name]) || ArrayUtil::isHash($tree[$name])) {
+								if (!\is_array($tree[$name]) || ArrayUtil::isHash($tree[$name])) {
 									$tree[$name] = array( $tree[$name] );
 								}
 								$tree[$name][] = $node;
@@ -166,9 +166,9 @@ class Xml
 					} elseif (!empty($node)) {
 						$tree[] = $node;
 					}
-				} elseif ($xml->hasValue && in_array($xml->nodeType, array(\XMLReader::TEXT, \XMLReader::CDATA))) {
+				} elseif ($xml->hasValue && \in_array($xml->nodeType, array(\XMLReader::TEXT, \XMLReader::CDATA))) {
 					$tree[] = array(
-						'text' => trim($xml->value),
+						'text' => \trim($xml->value),
 					);
 				}
 			}
@@ -185,10 +185,11 @@ class Xml
 	 *
 	 * @return string
 	 */
-	public function build($array, $opts = array())
+	public static function build($array, $opts = array())
 	{
-		$this->debug->groupCollapsed(__CLASS__.'->'.__FUNCTION__);
-		$opts = array_merge(array(
+        $debug = \bdk\Debug::getInstance();
+		$debug->groupCollapsed(__CLASS__ . '->' . __FUNCTION__);
+		$opts = \array_merge(array(
 			'xml_tag'		=> false,
 			'xml_version'	=> '1.0',
 			'xml_encoding'	=> 'utf-8',
@@ -218,38 +219,38 @@ class Xml
 		$levels = array(
 			array(
 				'startElement'		=> false,
-				'keys'				=> array_keys($array),
+				'keys'				=> \array_keys($array),
 				'pointer_source'	=> &$array,
 			),
 		);
 		while (!empty($levels)) {
-			$level =& $levels[count($levels)-1];
+			$level =& $levels[\count($levels) - 1];
 			if (empty($level['prepped'])) {
-				#$this->debug->log('prepping');
+				#$debug->log('prepping');
 				$level['prepped'] = true;
-				#$this->debug->log('path', implode('/', $path));
+				#$debug->log('path', \implode('/', $path));
 				// make sure attribs is first in keys
-				$key = array_search('attribs', $level['keys']);
+				$key = \array_search('attribs', $level['keys']);
 				if ($key > 0) {
 					unset($level['keys'][$key]);
-					array_unshift($level['keys'], 'attribs');
+					\array_unshift($level['keys'], 'attribs');
 				}
 			}
 			if (!empty($level['keys'])) {
-				$key = array_shift($level['keys']);
+				$key = \array_shift($level['keys']);
 				$val = &$level['pointer_source'][$key];
 				$name = $key;
-				if (is_int($key)) {
-					$name = is_array($val) && isset($val['tag'])
+				if (\is_int($key)) {
+					$name = \is_array($val) && isset($val['tag'])
 						? $val['tag']
-						: $path[count($path)-1];
+						: $path[\count($path) - 1];
 				}
-				#$this->debug->log('name a',$name);
+				#$debug->log('name a',$name);
 				$collapsed = true;
-				if (is_array($val)) {
+				if (\is_array($val)) {
 					foreach ($val as $k => $v) {
-						if (substr($k, 0, 1) == '_' && $k != '_text') {
-							$k2 = substr($k, 1);
+						if (\substr($k, 0, 1) == '_' && $k != '_text') {
+							$k2 = \substr($k, 1);
 							$level['pointer_source'][$key]['attribs'][$k2] = $v;
 							unset($level['pointer_source'][$key][$k]);
 						}
@@ -260,43 +261,43 @@ class Xml
 							$name = $val['tag'];
 						}
 						if (isset($val['prefix'])) {
-							$name = $val['prefix'].':'.$name;
+							$name = $val['prefix'] . ':' . $name;
 						}
 					}
 				}
-				#$this->debug->log('name b',$name);
+				#$debug->log('name b',$name);
 				if ($val === null || $val === array() || $val === '') {
 					if ($opts['empty_tags']) {
 						$w->writeElement($name, $val);
 					}
 					// else
-					//	$this->debug->log('skip '.$key);
-				} elseif (is_string($val) && $key === 'text') {
+					//	$debug->log('skip '.$key);
+				} elseif (\is_string($val) && $key === 'text') {
 					$val = Str::toUtf8($val);
 					$w->text($val);
-				} elseif (is_array($val) && $key === 'attribs') {
+				} elseif (\is_array($val) && $key === 'attribs') {
 					foreach ($val as $k => $v) {
-						if (is_null($v)) {
+						if (\is_null($v)) {
 							continue;
 						}
 						$w->writeAttribute($k, $v);
 					}
-				} elseif (is_array($val)) {
+				} elseif (\is_array($val)) {
 					if ($opts['debug_group']) {
-						$this->debug->groupCollapsed($key);
+						$debug->groupCollapsed($key);
 					}
-					#$this->debug->log('collapsed', $collapsed);
+					#$debug->log('collapsed', $collapsed);
 					if ($collapsed) {
 						$level_new = array(
 							'startElement'		=> ArrayUtil::isHash($val),
-							'keys'				=> array_keys($val),
+							'keys'				=> \array_keys($val),
 							'pointer_source'	=> &$level['pointer_source'][$key],
 						);
 					} else {
 						$level_new = array(
 							'startElement'		=> true,
 							'keys'				=> !empty($val['nodes'])
-														? array_keys($val['nodes'])
+														? \array_keys($val['nodes'])
 														: array(),
 							'pointer_source'	=> isset($val['text'])
 														? $val['text']
@@ -306,7 +307,7 @@ class Xml
 							$level_new['pointer_source'] =& $level['pointer_source'][$key]['nodes'];
 						}
 					}
-					#$this->debug->log('level_new', $level_new);
+					#$debug->log('level_new', $level_new);
 					$levels[] = $level_new;
 					$path[] = $key;
 					if ($level_new['startElement']) {
@@ -328,13 +329,13 @@ class Xml
 					$w->writeElement($name, $val);
 				}
 			} else {
-				array_pop($levels);
-				$p = array_pop($path);
+				\array_pop($levels);
+				$path2 = \array_pop($path);
 				if ($level['startElement']) {
 					$w->endElement();
 				}
-				if ($opts['debug_group'] && $p !== null) {
-					$this->debug->groupEnd();
+				if ($opts['debug_group'] && $path2 !== null) {
+					$debug->groupEnd();
 				}
 			}
 		}
@@ -346,9 +347,9 @@ class Xml
 		}
 		$xml = $w->flush();
 		if (!$opts['empty_tags']) {
-			$xml = preg_replace('#'.$opts['indent'].'*<[\w:]+/>\n#', '', $xml);
+			$xml = \preg_replace('#' . $opts['indent'] . '*<[\w:]+/>\n#', '', $xml);
 		}
-		$this->debug->groupEnd();
+		$debug->groupEnd();
 		return $xml;
 	}
 }

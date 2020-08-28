@@ -5,6 +5,7 @@ namespace bdk;
 use bdk\ArrayUtil;
 use bdk\Config;
 use bdk\Str;
+use bdk\Debug\Utility\Html as DebugHtml;
 
 /**
  * HTML methods
@@ -94,7 +95,7 @@ class Html extends Config
                 }
             }
         }
-        return \bdk\Debug\Utilities::buildAttribString($attribs);
+        return DebugHtml::buildAttribString($attribs);
     }
 
     /**
@@ -112,20 +113,21 @@ class Html extends Config
         foreach ($params as $k => $v) {
             $k = urlencode($k);
             if (!empty($key)) {
-                $k = $key.'['.$k.']';
+                $k = $key . '[' . $k . ']';
             }
-            if (is_null($v)) {
+            if (\is_null($v)) {
                 continue;
             } elseif (is_array($v)) {
-                $query .= call_user_func(array(__CLASS__, __FUNCTION__), $v, $separator, $k).$separator;
+                $query .= \call_user_func(array(__CLASS__, __FUNCTION__), $v, $separator, $k) . $separator;
             } else {
                 if ($v === false) {
                     $v = 0;
                 } elseif ($v === true) {
                     $v = '';
                 }
-                $v = str_replace(array('%2F','%2C','%3A','%7C'), array('/',',',':','|'), urlencode($v));
-                $query .= $k.'='.$v.$separator;
+                // ,'%7C' : '|'
+                $v = \str_replace(array('%2F','%2C','%3A'), array('/',',',':'), \urlencode($v));
+                $query .= $k . '=' . $v . $separator;
             }
         }
         $query = rtrim(str_replace('='.$separator, $separator, $query), $separator);
@@ -180,7 +182,7 @@ class Html extends Config
         $return = self::buildUrlSchemeHostPort($parts);
         if ($parts['path'] && \substr($parts['path'], 0, 1) != '/') {
             // need a slash
-            $parts['path'] = '/'.$parts['path'];
+            $parts['path'] = '/' . $parts['path'];
         }
         if ($parts['query']) {
             $parts['query'] = \ltrim($parts['query'], '?');
@@ -469,7 +471,7 @@ class Html extends Config
      */
     public static function parseAttribString($str, $decode = true, $decodeData = true)
     {
-        return \bdk\Debug\Utilities::parseAttribString($str, $decode, $decodeData);
+        return DebugHtml::parseAttribString($str, $decode, $decodeData);
     }
 
     /**
@@ -487,7 +489,7 @@ class Html extends Config
      */
     public static function parseTag($tag)
     {
-        return \bdk\Debug\Utilities::parseTag($tag);
+        return DebugHtml::parseTag($tag);
     }
 
     /**
@@ -666,25 +668,32 @@ class Html extends Config
             return '';
         } elseif (!$parts['scheme']) {
             // we passed a host, but no scheme
-            if (\in_array($parts['host'], array(
+            /*
+            if (
+                \in_array($parts['host'], array(
                     '127.0.0.1',
                     'localhost',
                     isset($_SERVER['SERVER_ADDR']) ? $_SERVER['SERVER_ADDR'] : null,
-            ))) {
-                $local = true;
+                ))
+            ) {
+                $auto = true;
             } else {
                 $regex = '#(.+\.)?(\w+.[a-z])$#';
                 $hostDomain = \preg_replace($regex, '$1', $parts['host']);
                 $localDomain = \preg_replace($regex, '$1', isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : null);
-                $local = $hostDomain == $localDomain;
+                $auto = $hostDomain == $localDomain;
             }
-            if ($local) {
-                $parts['scheme'] = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS']=='on'
+            if ($auto) {
+                $parts['scheme'] = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on'
                     ? 'https'
                     : 'http';
             } else {
                 $parts['scheme'] = 'http';
             }
+            */
+            $parts['scheme'] = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on'
+                ? 'https'
+                : 'http';
         } elseif (!\in_array($parts['scheme'], array('http','https'))) {
             $parts = \array_diff_key($parts, \array_flip(array('query','fragment','params')));
         }
